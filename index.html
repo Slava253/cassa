@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Касса Магазина | *Изменение последнего товара | /Пакет</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #1e2a3a 0%, #0f1a24 100%);
+            font-family: 'Segoe UI', 'Roboto', 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .pos-system {
+            max-width: 1600px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .pos-container {
+            background: #2c3e2f;
+            background-image: radial-gradient(circle at 10% 20%, rgba(60, 80, 50, 0.4) 2%, transparent 2.5%);
+            background-size: 28px 28px;
+            border-radius: 48px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border: 1px solid #d4af37;
+        }
+
+        .admin-panel {
+            background: #1e2a2f;
+            border-radius: 40px;
+            padding: 20px;
+            border: 1px solid #5f7f5e;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .admin-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #d4af37;
+            padding-bottom: 12px;
+        }
+
+        .admin-header h3 {
+            margin: 0;
+            color: #ffd966;
+            font-size: 1.6rem;
+        }
+
+        .admin-badge {
+            background: #2c5a2c;
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            color: #c7e9b0;
+        }
+
+        .add-product-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #4a6b3e;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #b9d2a5;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .admin-input {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 1rem;
+            background: #fef9e6;
+            border: 2px solid #6f8f5e;
+            border-radius: 40px;
+            outline: none;
+            font-family: monospace;
+        }
+
+        .admin-input:focus {
+            border-color: #ffcf4a;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.4);
+        }
+
+        .btn-add-product {
+            background: #4a7c59;
+            color: white;
+            padding: 12px 28px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 48px;
+            cursor: pointer;
+            transition: 0.1s;
+            font-family: monospace;
+            box-shadow: 0 3px 0 #1e4a2a;
+        }
+
+        .btn-add-product:hover {
+            background: #5e9e6e;
+            transform: translateY(-1px);
+        }
+
+        .products-table-wrapper {
+            max-height: 300px;
+            overflow-y: auto;
+            border-radius: 24px;
+            background: #0f1f0e;
+            padding: 5px;
+        }
+
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            background: #fef9e6;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .products-table th {
+            background: #3b2a1f;
+            color: #ffeaac;
+            padding: 10px 8px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+        }
+
+        .products-table td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd2b0;
+            color: #2c2b1f;
+        }
+
+        .edit-btn, .delete-product-btn {
+            background: #d6a13e;
+            border: none;
+            color: #1f2a0e;
+            padding: 4px 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 0 3px;
+            font-size: 0.75rem;
+        }
+
+        .delete-product-btn {
+            background: #b13e3e;
+            color: white;
+        }
+
+        .display-area {
+            background: #1e2a1c;
+            border-radius: 32px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: inset 0 0 10px #00000055, 0 8px 18px rgba(0,0,0,0.3);
+        }
+
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 12px;
+            border-bottom: 2px solid #d4af37;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .cart-header h2 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: #f7e05e;
+            text-shadow: 2px 2px 0 #5a3e1a;
+        }
+
+        .total-info {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: #00000066;
+            padding: 8px 18px;
+            border-radius: 60px;
+        }
+
+        .total-info .amount {
+            color: #f5f5b5;
+            font-size: 1.8rem;
+            margin-left: 10px;
+            background: #2c2b1f;
+            padding: 4px 14px;
+            border-radius: 40px;
+        }
+
+        .cart-table-wrapper {
+            overflow-x: auto;
+            border-radius: 24px;
+            background: #0f1f0e;
+            padding: 5px;
+        }
+
+        .cart-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+            background: #fef9e6;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .cart-table th {
+            background: #3b2a1f;
+            color: #ffeaac;
+            padding: 12px 8px;
+            text-align: left;
+        }
+
+        .cart-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #ddd2b0;
+            color: #2c2b1f;
+        }
+
+        .delete-item {
+            background: #b13e3e;
+            border: none;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .qty-btn {
+            background: #cfcfb0;
+            border: none;
+            width: 28px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 3px;
+        }
+
+        .scanner-panel {
+            background: #2f3e2c;
+            border-radius: 36px;
+            padding: 22px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .input-group {
+            flex: 3;
+            min-width: 220px;
+            position: relative;
+        }
+
+        .barcode-input {
+            width: 100%;
+            padding: 14px 18px;
+            font-size: 1.3rem;
+            font-family: monospace;
+            background: #fcf9e1;
+            border: 2px solid #c9b25a;
+            border-radius: 48px;
+            outline: none;
+            font-weight: bold;
+        }
+
+        .quantity-group {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .quantity-input {
+            width: 100%;
+            padding: 14px 12px;
+            font-size: 1.2rem;
+            text-align: center;
+            border-radius: 48px;
+            border: 2px solid #c9b25a;
+            font-weight: bold;
+            background: #fcf9e1;
+        }
+
+        .action-buttons {
+            flex: 1.5;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 18px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 48px;
+            cursor: pointer;
+            font-family: monospace;
+            background: #2d2b1c;
+            color: #ffefb9;
+            box-shadow: 0 3px 0 #14100a;
+            transition: all 0.1s ease;
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #14100a;
+        }
+
+        .btn-primary {
+            background: #d6a13e;
+            color: #1f2a0e;
+        }
+
+        .btn-success {
+            background: #2f6b2f;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #5d5a2c;
+        }
+
+        .btn-info {
+            background: #2c6b6b;
+            color: white;
+        }
+
+        .control-bar {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .payment-area {
+            background: #232e1c;
+            border-radius: 32px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .payment-status {
+            font-size: 1.1rem;
+            font-weight: bold;
+            background: #1e2a1a;
+            padding: 8px 18px;
+            border-radius: 50px;
+            color: #e7da91;
+        }
+
+        .info-message {
+            background: #191e12;
+            border-radius: 28px;
+            padding: 10px 20px;
+            color: #eedb77;
+            font-size: 0.9rem;
+            margin-top: 15px;
+            border-left: 5px solid gold;
+        }
+
+        .highlight {
+            background: #fff0b5;
+            transition: 0.1s;
+        }
+
+        .product-stats {
+            margin-top: 15px;
+            font-size: 0.8rem;
+            color: #b8c9a8;
+            background: #141f12;
+            border-radius: 30px;
+            padding: 8px 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #2c3e2f;
+            padding: 30px;
+            border-radius: 40px;
+            border: 2px solid #d4af37;
+            min-width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .modal-content h3 {
+            color: #ffd966;
+            margin-top: 0;
+            text-align: center;
+        }
+
+        .payment-methods {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .payment-method-btn {
+            flex: 1;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: 2px solid #c9b25a;
+            border-radius: 40px;
+            background: #fef9e6;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .payment-method-btn:hover {
+            background: #ffd966;
+            transform: scale(1.02);
+        }
+
+        .cash-input-area {
+            margin: 20px 0;
+            display: none;
+        }
+
+        .cash-input-area label {
+            display: block;
+            color: #ffd966;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .cash-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.2rem;
+            border-radius: 40px;
+            border: 2px solid #c9b25a;
+            background: #fef9e6;
+            text-align: center;
+        }
+
+        .change-display {
+            background: #1e2a1c;
+            padding: 15px;
+            border-radius: 30px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .change-display p {
+            margin: 5px 0;
+            font-size: 1.2rem;
+        }
+
+        .change-amount {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffd966;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 40px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .btn-confirm {
+            background: #d6a13e;
+            color: #1f2a0e;
+        }
+
+        .btn-cancel {
+            background: #5d5a2c;
+            color: white;
+        }
+
+        .quick-qty-badge {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #d6a13e;
+            color: #1f2a0e;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        @media (max-width: 780px) {
+            .pos-container, .admin-panel { padding: 12px; }
+            .cart-table th, .cart-table td { font-size: 0.7rem; }
+            .modal-content { min-width: 300px; margin: 20px; }
+            .payment-methods { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="pos-system">
+    <!-- РАЗДЕЛ АДМИНИСТРАТОРА: УПРАВЛЕНИЕ ТОВАРАМИ -->
+    <div class="admin-panel">
+        <div class="admin-header">
+            <h3>🏪 УПРАВЛЕНИЕ ТОВАРАМИ</h3>
+            <div class="admin-badge">Добавление | Удаление | Изменение цены</div>
+        </div>
+        
+        <div class="add-product-form">
+            <div class="form-group">
+                <label>🔲 ШТРИХКОД ТОВАРА</label>
+                <input type="text" id="newBarcode" class="admin-input" placeholder="Наведите сканер или введите код..." autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>📦 НАЗВАНИЕ ТОВАРА</label>
+                <input type="text" id="newProductName" class="admin-input" placeholder="Например: Йогурт фруктовый">
+            </div>
+            <div class="form-group">
+                <label>💰 ОБЫЧНАЯ ЦЕНА (₽)</label>
+                <input type="number" id="newProductPrice" class="admin-input" placeholder="0.00" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+                <label>💎 ЦЕНА ПО СКИДОЧНОЙ КАРТЕ (₽)</label>
+                <input type="number" id="newProductDiscountPrice" class="admin-input" placeholder="0.00" step="0.01" min="0">
+            </div>
+            <button id="addNewProductBtn" class="btn-add-product">➕ ДОБАВИТЬ ТОВАР</button>
+        </div>
+
+        <div class="products-table-wrapper">
+            <table class="products-table">
+                <thead>
+                    <tr><th>Штрихкод</th><th>Название</th><th>Обычная цена</th><th>Цена по скидке</th><th>Действия</th></thead>
+                <tbody id="productsTableBody">
+                    <tr><td colspan="5" style="text-align:center;">📦 База товаров пуста. Добавьте первый товар!</td></tr>
+                </tbody>
+             </table>
+        </div>
+        
+        <div class="product-stats" id="statsProducts">
+            📋 Всего товаров: <strong id="productCount">0</strong> &nbsp;|&nbsp;
+            🎫 Скидочная карта: <strong id="discountCardStatus">не активна</strong>
+        </div>
+    </div>
+
+    <!-- ОСНОВНАЯ КАССА -->
+    <div class="pos-container">
+        <div class="display-area">
+            <div class="cart-header">
+                <h2>🛒 КАССОВЫЙ ТЕРМИНАЛ</h2>
+                <div class="total-info">💰 ИТОГО: <span class="amount" id="totalAmount">0.00</span> ₽</div>
+            </div>
+            <div class="cart-table-wrapper">
+                <table class="cart-table">
+                    <thead><tr><th>Товар</th><th>Штрихкод</th><th>Цена</th><th>Кол-во</th><th>Сумма</th><th>Действия</th></tr></thead>
+                    <tbody id="cartBody"><tr><td colspan="6" style="text-align:center;">✨ Отсканируйте штрихкод товара ✨</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="scanner-panel">
+            <div class="input-group">
+                <label>🔍 СКАНИРУЙ ШТРИХКОД (USB-сканер)</label>
+                <input type="text" id="barcodeInput" class="barcode-input" placeholder="Наведите сканер на товар или карту..." autofocus>
+                <div class="quick-qty-badge">*Число - изменить последний | / - пакет</div>
+            </div>
+            <div class="quantity-group">
+                <label>⚡ КОЛИЧЕСТВО</label>
+                <input type="number" id="quantityInput" class="quantity-input" value="1" min="1" step="1">
+            </div>
+            <div class="action-buttons">
+                <button id="addByCodeBtn" class="btn btn-primary">➕ ДОБАВИТЬ</button>
+                <button id="clearCartBtn" class="btn btn-warning">🗑 ОЧИСТИТЬ</button>
+            </div>
+        </div>
+
+        <div class="control-bar">
+            <div class="payment-area">
+                <button id="paymentBtn" class="btn btn-success">💵 ОПЛАТИТЬ</button>
+                <div class="payment-status" id="paymentStatus">ГОТОВ К ПРИЁМУ</div>
+                <button id="removeDiscountBtn" class="btn btn-info" style="display: none;">❌ Убрать скидку</button>
+                <button id="demoProductsBtn" class="btn" style="background:#4a6d3c;">📦 ДЕМО-ТОВАРЫ</button>
+            </div>
+        </div>
+        <div id="infoMessage" class="info-message">
+            ✅ Сканер USB активен.<br>
+            🎫 Скидочная карта: <strong>2020398190402</strong> | 🔄 Карта ОТМЕНЫ: <strong>3330007699509</strong><br>
+            ⚡ *Число - изменить количество ПОСЛЕДНЕГО товара | / - добавить пакет (6₽)
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для отмены товара -->
+<div id="cancelModal" class="modal">
+    <div class="modal-content">
+        <h3>🔄 ОТМЕНА ТОВАРА</h3>
+        <p style="color: #ffd966; text-align: center;">Отсканируйте штрихкод товара для отмены</p>
+        <label>📦 ШТРИХКОД ТОВАРА:</label>
+        <input type="text" id="cancelBarcode" class="admin-input" placeholder="Наведите сканер на товар..." autocomplete="off">
+        <label>🔢 КОЛИЧЕСТВО ДЛЯ ОТМЕНЫ:</label>
+        <input type="number" id="cancelQuantity" class="admin-input" value="1" min="1" step="1">
+        <div class="modal-buttons">
+            <button id="confirmCancelBtn" class="btn-confirm">✅ ПОДТВЕРДИТЬ ОТМЕНУ</button>
+            <button id="closeCancelModalBtn" class="btn-cancel">❌ ОТМЕНА</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для выбора способа оплаты -->
+<div id="paymentModal" class="modal">
+    <div class="modal-content">
+        <h3>💳 ВЫБОР СПОСОБА ОПЛАТЫ</h3>
+        <div class="payment-methods">
+            <button id="cashPaymentBtn" class="payment-method-btn">💵 НАЛИЧНЫЕ</button>
+            <button id="cardPaymentBtn" class="payment-method-btn">💳 БЕЗНАЛИЧНЫЙ</button>
+        </div>
+        
+        <div id="cashArea" class="cash-input-area">
+            <label>💰 Сумма, которую дал покупатель (₽):</label>
+            <input type="number" id="cashAmount" class="cash-input" placeholder="Введите сумму..." step="0.01" min="0">
+            <div id="changeDisplay" class="change-display" style="display: none;">
+                <p>💵 Сдача:</p>
+                <p class="change-amount" id="changeAmount">0.00 ₽</p>
+            </div>
+        </div>
+        
+        <div class="modal-buttons">
+            <button id="confirmPaymentBtn" class="btn-confirm">✅ ПОДТВЕРДИТЬ ОПЛАТУ</button>
+            <button id="closePaymentModalBtn" class="btn-cancel">❌ ОТМЕНА</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // БАЗА ТОВАРОВ (ИЗНАЧАЛЬНО ПУСТАЯ)
+    let productsDatabase = new Map();
+    
+    const DISCOUNT_CARD_BARCODE = "2020398190402";
+    const CANCEL_CARD_BARCODE = "3330007699509";
+    const PACKAGE_PRICE = 6.00;
+    const PACKAGE_BARCODE = "PACKAGE";
+
+    let isDiscountActive = false;
+    let cart = [];
+    let nextId = 1;
+    let selectedPaymentMethod = null;
+
+    // DOM элементы
+    const cartBody = document.getElementById('cartBody');
+    const totalAmountSpan = document.getElementById('totalAmount');
+    const barcodeInput = document.getElementById('barcodeInput');
+    const quantityInput = document.getElementById('quantityInput');
+    const addByCodeBtn = document.getElementById('addByCodeBtn');
+    const clearCartBtn = document.getElementById('clearCartBtn');
+    const paymentBtn = document.getElementById('paymentBtn');
+    const demoProductsBtn = document.getElementById('demoProductsBtn');
+    const removeDiscountBtn = document.getElementById('removeDiscountBtn');
+    const paymentStatusDiv = document.getElementById('paymentStatus');
+    const infoMessageDiv = document.getElementById('infoMessage');
+    const productCountSpan = document.getElementById('productCount');
+    const discountCardStatusSpan = document.getElementById('discountCardStatus');
+    const productsTableBody = document.getElementById('productsTableBody');
+    
+    const newBarcodeInput = document.getElementById('newBarcode');
+    const newProductNameInput = document.getElementById('newProductName');
+    const newProductPriceInput = document.getElementById('newProductPrice');
+    const newProductDiscountPriceInput = document.getElementById('newProductDiscountPrice');
+    const addNewProductBtn = document.getElementById('addNewProductBtn');
+    
+    const cancelModal = document.getElementById('cancelModal');
+    const cancelBarcodeInput = document.getElementById('cancelBarcode');
+    const cancelQuantityInput = document.getElementById('cancelQuantity');
+    
+    const paymentModal = document.getElementById('paymentModal');
+    const cashArea = document.getElementById('cashArea');
+    const cashAmountInput = document.getElementById('cashAmount');
+    const changeDisplay = document.getElementById('changeDisplay');
+    const changeAmountSpan = document.getElementById('changeAmount');
+
+    function updateProductsList() {
+        if (productsDatabase.size === 0) {
+            productsTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">📦 База товаров пуста. Добавьте первый товар!</td></tr>';
+            productCountSpan.innerText = "0";
+            return;
+        }
+        
+        let rows = '';
+        for (let [barcode, product] of productsDatabase) {
+            rows += `
+                <tr>
+                    <td style="font-family:monospace;">${escapeHtml(barcode)}</td>
+                    <td>${escapeHtml(product.name)}</td>
+                    <td>${product.regularPrice.toFixed(2)} ₽</td>
+                    <td>${product.discountPrice.toFixed(2)} ₽</td>
+                    <td>
+                        <button class="edit-btn" data-barcode="${escapeHtml(barcode)}">✏️ Изменить</button>
+                        <button class="delete-product-btn" data-barcode="${escapeHtml(barcode)}">🗑 Удалить</button>
+                    </td>
+                </tr>
+            `;
+        }
+        productsTableBody.innerHTML = rows;
+        productCountSpan.innerText = productsDatabase.size;
+        
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', () => openEditModal(btn.dataset.barcode));
+        });
+        document.querySelectorAll('.delete-product-btn').forEach(btn => {
+            btn.addEventListener('click', () => deleteProduct(btn.dataset.barcode));
+        });
+    }
+    
+    function openEditModal(barcode) {
+        const product = productsDatabase.get(barcode);
+        if (!product) return;
+        
+        const newRegularPrice = prompt(`Изменить обычную цену для "${product.name}":`, product.regularPrice);
+        if (newRegularPrice !== null) {
+            const newDiscountPrice = prompt(`Изменить цену по скидке для "${product.name}":`, product.discountPrice);
+            if (newDiscountPrice !== null) {
+                const regPrice = parseFloat(newRegularPrice);
+                const discPrice = parseFloat(newDiscountPrice);
+                if (!isNaN(regPrice) && regPrice >= 0 && !isNaN(discPrice) && discPrice >= 0) {
+                    product.regularPrice = regPrice;
+                    product.discountPrice = discPrice;
+                    productsDatabase.set(barcode, product);
+                    updateProductsList();
+                    updateCartPrices();
+                    showMessageAdmin(`✅ Цены товара "${product.name}" обновлены!`, false);
+                } else {
+                    showMessageAdmin("Ошибка: введите корректные цены!", true);
+                }
+            }
+        }
+    }
+    
+    function deleteProduct(barcode) {
+        const product = productsDatabase.get(barcode);
+        if (!product) return;
+        
+        if (confirm(`Удалить товар "${product.name}" из базы?`)) {
+            productsDatabase.delete(barcode);
+            updateProductsList();
+            cart = cart.filter(item => item.barcode !== barcode);
+            renderCart();
+            showMessageAdmin(`🗑 Товар "${product.name}" удалён`, false);
+        }
+    }
+    
+    function updateCartPrices() {
+        let updated = false;
+        for (let item of cart) {
+            const product = productsDatabase.get(item.barcode);
+            if (product && item.barcode !== PACKAGE_BARCODE) {
+                const newPrice = isDiscountActive ? product.discountPrice : product.regularPrice;
+                if (item.price !== newPrice) {
+                    item.price = newPrice;
+                    updated = true;
+                }
+            }
+        }
+        if (updated) renderCart();
+    }
+    
+    function addProductToDatabase(barcode, name, regularPrice, discountPrice) {
+        if (!barcode || barcode.trim() === "") {
+            showMessageAdmin("Ошибка: штрихкод не может быть пустым!", true);
+            return false;
+        }
+        if (!name || name.trim() === "") {
+            showMessageAdmin("Ошибка: введите название товара!", true);
+            return false;
+        }
+        const regularPriceNum = parseFloat(regularPrice);
+        const discountPriceNum = parseFloat(discountPrice);
+        
+        if (isNaN(regularPriceNum) || regularPriceNum < 0) {
+            showMessageAdmin("Ошибка: введите корректную обычную цену!", true);
+            return false;
+        }
+        if (isNaN(discountPriceNum) || discountPriceNum < 0) {
+            showMessageAdmin("Ошибка: введите корректную цену по скидке!", true);
+            return false;
+        }
+        
+        const cleanBarcode = barcode.trim();
+        if (productsDatabase.has(cleanBarcode)) {
+            showMessageAdmin(`⚠️ Товар со штрихкодом ${cleanBarcode} уже существует!`, true);
+            return false;
+        }
+        
+        productsDatabase.set(cleanBarcode, {
+            name: name.trim(),
+            regularPrice: regularPriceNum,
+            discountPrice: discountPriceNum,
+            barcode: cleanBarcode
+        });
+        updateProductsList();
+        showMessageAdmin(`✅ Товар "${name}" добавлен в базу!`, false);
+        
+        newBarcodeInput.value = "";
+        newProductNameInput.value = "";
+        newProductPriceInput.value = "";
+        newProductDiscountPriceInput.value = "";
+        newBarcodeInput.focus();
+        return true;
+    }
+    
+    function showMessageAdmin(msg, isError) {
+        const statsDiv = document.getElementById('statsProducts');
+        const tempMsg = document.createElement('div');
+        tempMsg.style.color = isError ? '#ffb5a0' : '#b9f6a5';
+        tempMsg.style.fontSize = '0.8rem';
+        tempMsg.style.marginTop = '5px';
+        tempMsg.innerText = isError ? `⚠️ ${msg}` : `✔️ ${msg}`;
+        statsDiv.appendChild(tempMsg);
+        setTimeout(() => tempMsg.remove(), 2500);
+    }
+    
+    function showMessage(msg, isError = false) {
+        infoMessageDiv.innerHTML = isError ? `⚠️ ${msg}` : `✅ ${msg}`;
+        infoMessageDiv.style.borderLeftColor = isError ? '#d9534f' : '#ffd966';
+        setTimeout(() => {
+            if (infoMessageDiv.innerHTML === `✅ ${msg}` || infoMessageDiv.innerHTML === `⚠️ ${msg}`) {
+                infoMessageDiv.innerHTML = `✅ Сканер USB активен.<br>🎫 Скидочная карта: <strong>2020398190402</strong> | 🔄 Карта ОТМЕНЫ: <strong>3330007699509</strong><br>⚡ *Число - изменить количество ПОСЛЕДНЕГО товара | / - добавить пакет (6₽)`;
+                infoMessageDiv.style.borderLeftColor = 'gold';
+            }
+        }, 2800);
+    }
+    
+    function updateDiscountUI() {
+        if (isDiscountActive) {
+            discountCardStatusSpan.innerHTML = '✅ активна';
+            discountCardStatusSpan.style.color = '#b9f6a5';
+            removeDiscountBtn.style.display = 'inline-block';
+        } else {
+            discountCardStatusSpan.innerHTML = 'не активна';
+            discountCardStatusSpan.style.color = '#e7da91';
+            removeDiscountBtn.style.display = 'none';
+        }
+        updateCartPrices();
+    }
+    
+    function renderCart() {
+        if (cart.length === 0) {
+            cartBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">🛍 Корзина пуста. Сканируйте товары!</td></tr>';
+            totalAmountSpan.innerText = "0.00";
+            return;
+        }
+        let total = 0;
+        let rows = '';
+        for (let item of cart) {
+            const sum = item.price * item.quantity;
+            total += sum;
+            const isPackage = item.barcode === PACKAGE_BARCODE;
+            rows += `
+                <tr>
+                    <td><strong>${escapeHtml(item.name)}</strong></td>
+                    <td style="font-family:monospace;">${escapeHtml(item.barcode)}</td>
+                    <td>${item.price.toFixed(2)} ₽</td>
+                    <td>${item.quantity}</td>
+                    <td>${sum.toFixed(2)} ₽</td>
+                    <td>
+                        ${isPackage ? `
+                            <button class="qty-btn-package" data-id="${item.id}" data-delta="-1">-</button>
+                            <button class="delete-item-package" data-id="${item.id}">❌</button>
+                            <button class="qty-btn-package" data-id="${item.id}" data-delta="1">+</button>
+                        ` : ''}
+                    </td>
+                </tr>
+            `;
+        }
+        cartBody.innerHTML = rows;
+        totalAmountSpan.innerText = total.toFixed(2);
+        
+        // Только для пакетов - кнопки изменения количества и удаления
+        document.querySelectorAll('.qty-btn-package').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.dataset.id);
+                const delta = parseInt(btn.dataset.delta);
+                updatePackageQuantity(id, delta);
+            });
+        });
+        document.querySelectorAll('.delete-item-package').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.dataset.id);
+                removePackageItem(id);
+            });
+        });
+    }
+    
+    function updatePackageQuantity(id, delta) {
+        const index = cart.findIndex(item => item.id === id);
+        if (index === -1 || cart[index].barcode !== PACKAGE_BARCODE) return;
+        const newQty = cart[index].quantity + delta;
+        if (newQty <= 0) {
+            cart = cart.filter(item => item.id !== id);
+            showMessage(`🛍 Пакет удалён из корзины`);
+        } else {
+            cart[index].quantity = newQty;
+            showMessage(`🛍 Количество пакетов изменено на ${newQty}`);
+        }
+        renderCart();
+    }
+    
+    function removePackageItem(id) {
+        const item = cart.find(i => i.id === id);
+        if (item && item.barcode === PACKAGE_BARCODE) {
+            cart = cart.filter(i => i.id !== id);
+            renderCart();
+            showMessage(`🛍 Пакет удалён из корзины`);
+        }
+    }
+    
+    function cancelProduct(barcode, quantityToCancel) {
+        const product = productsDatabase.get(barcode);
+        if (!product) {
+            showMessage(`❌ Товар со штрихкодом ${barcode} не найден в базе!`, true);
+            return false;
+        }
+        
+        const cartItem = cart.find(item => item.barcode === barcode);
+        if (!cartItem) {
+            showMessage(`❌ Товар "${product.name}" отсутствует в корзине!`, true);
+            return false;
+        }
+        
+        const cancelQty = parseInt(quantityToCancel);
+        if (isNaN(cancelQty) || cancelQty <= 0) {
+            showMessage(`❌ Введите корректное количество для отмены!`, true);
+            return false;
+        }
+        
+        if (cancelQty >= cartItem.quantity) {
+            const removedQty = cartItem.quantity;
+            cart = cart.filter(item => item.barcode !== barcode);
+            showMessage(`🔄 Отменён товар "${product.name}" в количестве ${removedQty} шт.`, false);
+        } else {
+            cartItem.quantity -= cancelQty;
+            showMessage(`🔄 Отменено ${cancelQty} шт. товара "${product.name}". Осталось: ${cartItem.quantity} шт.`, false);
+        }
+        
+        renderCart();
+        playBeep();
+        return true;
+    }
+    
+    function openCancelModal() {
+        cancelModal.style.display = 'flex';
+        cancelBarcodeInput.value = "";
+        cancelQuantityInput.value = "1";
+        cancelBarcodeInput.focus();
+    }
+    
+    function closeCancelModal() {
+        cancelModal.style.display = 'none';
+        barcodeInput.focus();
+    }
+    
+    function processCancel() {
+        const barcode = cancelBarcodeInput.value.trim();
+        const quantity = cancelQuantityInput.value;
+        
+        if (!barcode) {
+            showMessage("Введите штрихкод товара для отмены!", true);
+            cancelBarcodeInput.focus();
+            return;
+        }
+        
+        cancelProduct(barcode, quantity);
+        closeCancelModal();
+    }
+    
+    function openPaymentModal() {
+        if (cart.length === 0) {
+            showMessage("Невозможно оплатить: корзина пуста!", true);
+            return;
+        }
+        selectedPaymentMethod = null;
+        cashAmountInput.value = "";
+        cashArea.style.display = "none";
+        changeDisplay.style.display = "none";
+        paymentModal.style.display = 'flex';
+    }
+    
+    function closePaymentModal() {
+        paymentModal.style.display = 'none';
+        barcodeInput.focus();
+    }
+    
+    function calculateChange() {
+        const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const cashGiven = parseFloat(cashAmountInput.value);
+        
+        if (!isNaN(cashGiven) && cashGiven >= total) {
+            const change = cashGiven - total;
+            changeAmountSpan.innerText = change.toFixed(2) + " ₽";
+            changeDisplay.style.display = "block";
+            return true;
+        } else if (!isNaN(cashGiven) && cashGiven < total) {
+            changeAmountSpan.innerText = "0.00 ₽ (НЕДОСТАТОЧНО)";
+            changeDisplay.style.display = "block";
+            return false;
+        }
+        return false;
+    }
+    
+    function processPayment() {
+        const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        
+        if (selectedPaymentMethod === 'cash') {
+            const cashGiven = parseFloat(cashAmountInput.value);
+            if (isNaN(cashGiven) || cashGiven < total) {
+                showMessage(`❌ Сумма ${cashGiven} ₽ недостаточна! Требуется ${total.toFixed(2)} ₽`, true);
+                return;
+            }
+            const change = cashGiven - total;
+            paymentStatusDiv.innerHTML = `💸 ОПЛАЧЕНО НАЛИЧНЫМИ: ${total.toFixed(2)} ₽ | СДАЧА: ${change.toFixed(2)} ₽`;
+            showMessage(`💰 Оплата наличными принята! Сдача: ${change.toFixed(2)} ₽`, false);
+        } else if (selectedPaymentMethod === 'card') {
+            paymentStatusDiv.innerHTML = `💳 ОПЛАЧЕНО КАРТОЙ: ${total.toFixed(2)} ₽`;
+            showMessage(`💳 Оплата картой на сумму ${total.toFixed(2)} ₽ прошла успешно!`, false);
+        } else {
+            showMessage("Выберите способ оплаты!", true);
+            return;
+        }
+        
+        paymentStatusDiv.style.color = "#c3ff92";
+        cart = [];
+        renderCart();
+        isDiscountActive = false;
+        updateDiscountUI();
+        
+        setTimeout(() => {
+            paymentStatusDiv.innerHTML = "ГОТОВ К ПРИЁМУ";
+            paymentStatusDiv.style.color = "#e7da91";
+        }, 4000);
+        
+        playBeep();
+        closePaymentModal();
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    // Добавление пакета
+    function addPackage() {
+        const existingPackage = cart.find(item => item.barcode === PACKAGE_BARCODE);
+        const price = PACKAGE_PRICE;
+        
+        if (existingPackage) {
+            existingPackage.quantity += 1;
+            showMessage(`🛍 Пакет добавлен. Всего пакетов: ${existingPackage.quantity} шт. (${(price * existingPackage.quantity).toFixed(2)} ₽)`, false);
+        } else {
+            const newItem = {
+                id: nextId++,
+                barcode: PACKAGE_BARCODE,
+                name: "Пакет (пластиковый)",
+                price: price,
+                quantity: 1
+            };
+            cart.push(newItem);
+            showMessage(`🛍 Пакет добавлен (+${price.toFixed(2)} ₽)`, false);
+        }
+        renderCart();
+        playBeep();
+        return true;
+    }
+    
+    // Изменение количества последнего товара
+    function changeLastItemQuantity(newQuantity) {
+        if (cart.length === 0) {
+            showMessage("❌ Корзина пуста! Нет товара для изменения.", true);
+            return false;
+        }
+        
+        // Находим последний НЕ ПАКЕТ товар
+        let lastNonPackageIndex = -1;
+        for (let i = cart.length - 1; i >= 0; i--) {
+            if (cart[i].barcode !== PACKAGE_BARCODE) {
+                lastNonPackageIndex = i;
+                break;
+            }
+        }
+        
+        if (lastNonPackageIndex === -1) {
+            showMessage("❌ Нет товаров для изменения (в корзине только пакеты)!", true);
+            return false;
+        }
+        
+        const lastItem = cart[lastNonPackageIndex];
+        const oldQty = lastItem.quantity;
+        const qtyNum = parseInt(newQuantity);
+        
+        if (isNaN(qtyNum) || qtyNum <= 0) {
+            showMessage("❌ Введите корректное количество (больше 0)!", true);
+            return false;
+        }
+        
+        lastItem.quantity = qtyNum;
+        renderCart();
+        showMessage(`✏️ Количество "${lastItem.name}" изменено с ${oldQty} на ${qtyNum} шт. (${(lastItem.price * qtyNum).toFixed(2)} ₽)`, false);
+        playBeep();
+        return true;
+    }
+    
+    // Обработка команд: *число - изменить последний товар, / - пакет
+    function handleQuickCommand(inputValue) {
+        // Добавление пакета через /
+        if (inputValue === '/') {
+            addPackage();
+            barcodeInput.value = "";
+            return true;
+        }
+        
+        // Изменение последнего товара через *число
+        if (inputValue.startsWith('*')) {
+            const quantityPart = inputValue.substring(1);
+            const quantity = parseInt(quantityPart);
+            if (!isNaN(quantity) && quantity > 0) {
+                changeLastItemQuantity(quantity);
+                barcodeInput.value = "";
+                return true;
+            } else {
+                showMessage("❌ После * введите корректное количество (например *5)", true);
+                barcodeInput.value = "";
+                return false;
+            }
+        }
+        return false;
+    }
+    
+    function processScannedBarcode(barcode, quantity = null) {
+        let finalQuantity = quantity !== null ? quantity : (parseInt(quantityInput.value) || 1);
+        
+        // Карта отмены
+        if (barcode === CANCEL_CARD_BARCODE) {
+            openCancelModal();
+            barcodeInput.value = "";
+            return true;
+        }
+        
+        // Скидочная карта
+        if (barcode === DISCOUNT_CARD_BARCODE) {
+            if (!isDiscountActive) {
+                isDiscountActive = true;
+                updateDiscountUI();
+                showMessage(`🎫 Скидочная карта активирована! Цены обновлены.`, false);
+                playBeep();
+            } else {
+                showMessage(`Скидочная карта уже активна`, false);
+            }
+            barcodeInput.value = "";
+            return true;
+        }
+        
+        // Товар
+        const product = productsDatabase.get(barcode.trim());
+        if (!product) {
+            showMessage(`❌ Товар со штрихкодом ${barcode} не найден! Добавьте его через раздел управления товарами.`, true);
+            return false;
+        }
+        
+        const currentPrice = isDiscountActive ? product.discountPrice : product.regularPrice;
+        const existingIndex = cart.findIndex(item => item.barcode === product.barcode);
+        
+        if (existingIndex !== -1) {
+            cart[existingIndex].quantity += finalQuantity;
+            renderCart();
+            showMessage(`➕ ${product.name} добавлен x${finalQuantity}. Всего: ${cart[existingIndex].quantity} шт. (${(currentPrice * cart[existingIndex].quantity).toFixed(2)} ₽)`);
+        } else {
+            const newItem = {
+                id: nextId++,
+                barcode: product.barcode,
+                name: product.name,
+                price: currentPrice,
+                quantity: finalQuantity
+            };
+            cart.push(newItem);
+            renderCart();
+            showMessage(`✅ ${product.name} добавлен (${finalQuantity} шт.) на сумму ${(currentPrice * finalQuantity).toFixed(2)} ₽`);
+        }
+        
+        barcodeInput.classList.add('highlight');
+        setTimeout(() => barcodeInput.classList.remove('highlight'), 200);
+        barcodeInput.value = "";
+        return true;
+    }
+    
+    function handleAddCurrent() {
+        let inputValue = barcodeInput.value.trim();
+        
+        if (inputValue === "") {
+            showMessage("Сначала отсканируйте или введите штрихкод!", true);
+            barcodeInput.focus();
+            return;
+        }
+        
+        // Проверяем на быстрые команды (*число, /пакет)
+        if (handleQuickCommand(inputValue)) {
+            barcodeInput.focus();
+            return;
+        }
+        
+        processScannedBarcode(inputValue);
+        barcodeInput.focus();
+        quantityInput.value = "1";
+    }
+    
+    function clearCart() {
+        if (cart.length > 0) {
+            cart = [];
+            renderCart();
+            showMessage("Корзина очищена");
+            paymentStatusDiv.innerHTML = "ГОТОВ К ПРИЁМУ";
+        } else {
+            showMessage("Корзина уже пуста");
+        }
+    }
+    
+    function playBeep() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            oscillator.connect(gain);
+            gain.connect(audioCtx.destination);
+            oscillator.frequency.value = 880;
+            gain.gain.value = 0.15;
+            oscillator.start();
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.3);
+            oscillator.stop(audioCtx.currentTime + 0.3);
+        } catch(e) {}
+    }
+    
+    function addDemoProducts() {
+        addProductToDatabase("4601234567890", "Молоко 'Деревенское' 1л", 89.90, 79.90);
+        addProductToDatabase("4605678901234", "Хлеб Бородинский", 54.50, 48.50);
+        addProductToDatabase("5449000214911", "Coca-Cola 0.5л", 95.00, 85.00);
+        addProductToDatabase("4609876543210", "Шоколад Alpine Gold", 119.99, 99.99);
+        showMessage("📦 Добавлены демо-товары в базу! Теперь их можно сканировать.", false);
+    }
+    
+    function removeDiscount() {
+        if (isDiscountActive) {
+            isDiscountActive = false;
+            updateDiscountUI();
+            showMessage(`❌ Скидочная карта деактивирована`, false);
+            playBeep();
+        } else {
+            showMessage(`Скидочная карта не активна`, false);
+        }
+    }
+    
+    // Обработчики для модального окна оплаты
+    document.getElementById('cashPaymentBtn').addEventListener('click', () => {
+        selectedPaymentMethod = 'cash';
+        cashArea.style.display = 'block';
+        cashAmountInput.focus();
+        cashAmountInput.addEventListener('input', calculateChange);
+        calculateChange();
+    });
+    
+    document.getElementById('cardPaymentBtn').addEventListener('click', () => {
+        selectedPaymentMethod = 'card';
+        cashArea.style.display = 'none';
+        changeDisplay.style.display = 'none';
+    });
+    
+    document.getElementById('confirmPaymentBtn').addEventListener('click', processPayment);
+    document.getElementById('closePaymentModalBtn').addEventListener('click', closePaymentModal);
+    
+    // Обработчики для модального окна отмены
+    document.getElementById('confirmCancelBtn').addEventListener('click', processCancel);
+    document.getElementById('closeCancelModalBtn').addEventListener('click', closeCancelModal);
+    cancelBarcodeInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') processCancel();
+    });
+    
+    window.addEventListener('click', (e) => {
+        if (e.target === cancelModal) closeCancelModal();
+        if (e.target === paymentModal) closePaymentModal();
+    });
+    
+    barcodeInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAddCurrent();
+        }
+    });
+    
+    addByCodeBtn.addEventListener('click', handleAddCurrent);
+    clearCartBtn.addEventListener('click', clearCart);
+    paymentBtn.addEventListener('click', openPaymentModal);
+    demoProductsBtn.addEventListener('click', addDemoProducts);
+    removeDiscountBtn.addEventListener('click', removeDiscount);
+    addNewProductBtn.addEventListener('click', () => {
+        addProductToDatabase(
+            newBarcodeInput.value,
+            newProductNameInput.value,
+            newProductPriceInput.value,
+            newProductDiscountPriceInput.value
+        );
+    });
+    
+    newBarcodeInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addProductToDatabase(
+                newBarcodeInput.value,
+                newProductNameInput.value,
+                newProductPriceInput.value,
+                newProductDiscountPriceInput.value
+            );
+        }
+    });
+    
+    document.body.addEventListener('click', (e) => {
+        if (!cancelModal.contains(e.target) && !paymentModal.contains(e.target) &&
+            e.target !== newBarcodeInput && e.target !== newProductNameInput &&
+            e.target !== newProductPriceInput && e.target !== newProductDiscountPriceInput) {
+            if (document.activeElement !== barcodeInput) barcodeInput.focus();
+        }
+    });
+    
+    updateProductsList();
+    updateDiscountUI();
+    renderCart();
+    showMessage("✅ Система готова! База товаров пуста. Добавьте товары через раздел управления.", false);
+</script>
+</body>
+</html>
