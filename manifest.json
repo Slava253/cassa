@@ -1,11 +1,11 @@
 {
-    "name": "ГУ СВС | Касса и бонусы",
-    "short_name": "ГУ СВС",
-    "description": "Государственные услуги - система кассы и бонусов",
+    "name": "Магазин | Касса и бонусы",
+    "short_name": "Магазин",
+    "description": "Система кассы и бонусных карт",
     "start_url": "index.html",
     "display": "standalone",
     "orientation": "portrait",
-    "theme_color": "#0b1e3a",
+    "theme_color": "#1a1a2e",
     "background_color": "#f0f4f9",
     "icons": [
         {
