@@ -3,6 +3,7 @@
 let currentCart = [];
 let currentClient = null;
 let cartTotal = 0;
+let selectedPayment = null;
 
 const user = checkAuth();
 if (!user || user.role !== 'cashier') {
@@ -15,36 +16,25 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCartUI();
 });
 
-// ===== СОЗДАНИЕ КАРТЫ КЛИЕНТА (КАССИР) =====
+// ===== СОЗДАНИЕ КАРТЫ КЛИЕНТА =====
 function cashierCreateClient() {
     const fullName = document.getElementById('cashierClientName').value.trim();
     const phone = document.getElementById('cashierClientPhone').value.trim();
     
-    if (!fullName) {
-        showToast('❌ Введите ФИО клиента', true);
-        document.getElementById('cashierClientName').focus();
-        return;
-    }
-    if (!phone) {
-        showToast('❌ Введите телефон клиента', true);
-        document.getElementById('cashierClientPhone').focus();
+    if (!fullName || !phone) {
+        showToast('❌ Заполните ФИО и телефон', true);
         return;
     }
     
     db.ref('clients').orderByChild('phone').equalTo(phone).once('value', snap => {
         if (snap.exists()) {
             showToast('❌ Клиент с таким телефоном уже существует', true);
-            document.getElementById('cashierClientPhone').focus();
             return;
         }
         
         const cardNumber = '29' + Math.floor(Math.random() * 10000000000).toString().padStart(10, '0');
         const data = { 
-            fullName: fullName, 
-            phone: phone, 
-            cardNumber: cardNumber, 
-            balance: 0, 
-            history: [] 
+            fullName, phone, cardNumber, balance: 0, history: [] 
         };
         
         db.ref('clients').push(data).then(() => {
@@ -55,7 +45,60 @@ function cashierCreateClient() {
     });
 }
 
-// ===== СКАНЕР КЛИЕНТА =====
+// ===== ДОБАВЛЕНИЕ ТОВАРА В СИСТЕМУ =====
+function addProductToSystem() {
+    const barcode = document.getElementById('productBarcode').value.trim();
+    const name = document.getElementById('productName').value.trim();
+    const price = parseFloat(document.getElementById('productPrice').value);
+    const discountPrice = parseFloat(document.getElementById('productDiscountPrice').value);
+    
+    if (!barcode) {
+        showToast('❌ Отсканируйте или введите штрихкод товара', true);
+        document.getElementById('productBarcode').focus();
+        return;
+    }
+    if (!name) {
+        showToast('❌ Введите название товара', true);
+        document.getElementById('productName').focus();
+        return;
+    }
+    if (isNaN(price) || price <= 0) {
+        showToast('❌ Введите корректную цену', true);
+        document.getElementById('productPrice').focus();
+        return;
+    }
+    if (isNaN(discountPrice) || discountPrice <= 0) {
+        showToast('❌ Введите цену со скидочной картой', true);
+        document.getElementById('productDiscountPrice').focus();
+        return;
+    }
+    
+    // Проверяем, есть ли уже товар с таким штрихкодом
+    db.ref('products').orderByChild('barcode').equalTo(barcode).once('value', snap => {
+        if (snap.exists()) {
+            showToast('❌ Товар с таким штрихкодом уже существует!', true);
+            return;
+        }
+        
+        const productData = {
+            barcode: barcode,
+            name: name,
+            price: price,
+            discountPrice: discountPrice,
+            createdAt: new Date().toISOString()
+        };
+        
+        db.ref('products').push(productData).then(() => {
+            document.getElementById('productBarcode').value = '';
+            document.getElementById('productName').value = '';
+            document.getElementById('productPrice').value = '';
+            document.getElementById('productDiscountPrice').value = '';
+            showToast(`✅ Товар "${name}" добавлен в систему!`);
+        }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+    });
+}
+
+// ===== ПОИСК КЛИЕНТА =====
 function scanClient() {
     const input = document.getElementById('clientScanInput').value.trim();
     if (!input) {
@@ -91,7 +134,7 @@ function scanClient() {
             `;
             showToast(`🎫 Клиент найден: ${found.fullName}`);
         } else {
-            showToast('❌ Клиент не найден', true);
+            showToast('❌ Клиент не найден. Создайте карту!', true);
         }
         document.getElementById('clientScanInput').value = '';
     });
@@ -103,32 +146,59 @@ function clearScannedClient() {
     document.getElementById('scannedClient').innerHTML = '';
 }
 
-// ===== ТОВАРЫ =====
-function addProduct() {
-    const barcode = document.getElementById('productBarcode').value.trim();
-    const quantity = parseInt(document.getElementById('productQuantity').value) || 1;
-    const price = parseFloat(document.getElementById('productPrice').value);
+// ===== ДОБАВЛЕНИЕ В КОРЗИНУ ПО ШТРИХКОДУ =====
+function addToCart() {
+    const barcode = document.getElementById('cartBarcodeInput').value.trim();
+    const quantity = parseInt(document.getElementById('cartQuantity').value) || 1;
     
-    if (!barcode || !price || price <= 0) {
-        showToast('❌ Введите штрихкод и цену', true);
+    if (!barcode) {
+        showToast('❌ Отсканируйте штрихкод товара', true);
+        document.getElementById('cartBarcodeInput').focus();
         return;
     }
     
-    currentCart.push({
-        name: 'Товар ' + barcode,
-        barcode: barcode,
-        price: price,
-        quantity: quantity
+    // Ищем товар в базе по штрихкоду
+    db.ref('products').orderByChild('barcode').equalTo(barcode).once('value', snap => {
+        let product = null;
+        let productId = null;
+        snap.forEach(child => {
+            product = child.val();
+            productId = child.key;
+        });
+        
+        if (!product) {
+            showToast(`❌ Товар с штрихкодом ${barcode} не найден в системе!`, true);
+            document.getElementById('cartBarcodeInput').value = '';
+            document.getElementById('cartBarcodeInput').focus();
+            return;
+        }
+        
+        // Определяем цену (со скидкой или без)
+        const price = currentClient ? product.discountPrice : product.price;
+        
+        // Проверяем, есть ли уже такой товар в корзине
+        const existing = currentCart.find(item => item.barcode === barcode);
+        if (existing) {
+            existing.quantity += quantity;
+            showToast(`➕ ${product.name} +${quantity} (всего ${existing.quantity})`);
+        } else {
+            currentCart.push({
+                barcode: barcode,
+                name: product.name,
+                price: price,
+                quantity: quantity,
+                productId: productId
+            });
+            showToast(`✅ ${product.name} добавлен (${quantity} шт.) по ${price.toFixed(2)} ₽`);
+        }
+        
+        document.getElementById('cartBarcodeInput').value = '';
+        document.getElementById('cartQuantity').value = '1';
+        updateCartUI();
     });
-    
-    document.getElementById('productBarcode').value = '';
-    document.getElementById('productPrice').value = '';
-    document.getElementById('productQuantity').value = '1';
-    
-    updateCartUI();
-    showToast('✅ Товар добавлен');
 }
 
+// ===== КОРЗИНА =====
 function updateCartUI() {
     const container = document.getElementById('cartList');
     cartTotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -143,9 +213,13 @@ function updateCartUI() {
     currentCart.forEach((item, idx) => {
         html += `
             <div class="history-item">
-                <div>${item.name} x ${item.quantity}</div>
-                <div>${(item.price * item.quantity).toFixed(2)} ₽ 
-                    <button class="small-btn danger" onclick="removeFromCart(${idx})">✕</button>
+                <div>
+                    <strong>${item.name}</strong>
+                    <span style="font-size:0.7rem; color:#7a8a9e; display:block;">Штрихкод: ${item.barcode}</span>
+                </div>
+                <div style="text-align:right;">
+                    ${item.quantity} шт. × ${item.price.toFixed(2)} ₽ = ${(item.price * item.quantity).toFixed(2)} ₽
+                    <button class="small-btn danger" onclick="removeFromCart(${idx})" style="display:block; margin-top:4px;">✕ Удалить</button>
                 </div>
             </div>
         `;
@@ -156,35 +230,87 @@ function updateCartUI() {
 function removeFromCart(idx) {
     currentCart.splice(idx, 1);
     updateCartUI();
+    showToast('🗑 Товар удалён из корзины');
 }
 
 function clearCart() {
     if (currentCart.length === 0) return;
     if (!confirm('Очистить корзину?')) return;
     currentCart = [];
+    selectedPayment = null;
+    document.querySelectorAll('.payment-btn').forEach(b => b.style.background = '#eef2f8');
+    document.getElementById('cashInputArea').style.display = 'none';
+    document.getElementById('changeDisplay').style.display = 'none';
     updateCartUI();
     showToast('🗑 Корзина очищена');
+}
+
+// ===== ВЫБОР СПОСОБА ОПЛАТЫ =====
+function selectPayment(method) {
+    selectedPayment = method;
+    document.querySelectorAll('.payment-btn').forEach(b => b.style.background = '#eef2f8');
+    document.getElementById('payCash').style.background = method === 'cash' ? '#1d6f2c' : '#eef2f8';
+    document.getElementById('payCash').style.color = method === 'cash' ? 'white' : '#1a1a2e';
+    document.getElementById('payCard').style.background = method === 'card' ? '#1a1a2e' : '#eef2f8';
+    document.getElementById('payCard').style.color = method === 'card' ? 'white' : '#1a1a2e';
+    
+    document.getElementById('cashInputArea').style.display = method === 'cash' ? 'block' : 'none';
+    if (method === 'cash') {
+        document.getElementById('cashGiven').focus();
+        document.getElementById('cashGiven').addEventListener('input', calculateChange);
+    }
+}
+
+function calculateChange() {
+    const total = cartTotal;
+    const given = parseFloat(document.getElementById('cashGiven').value);
+    if (!isNaN(given) && given >= total) {
+        document.getElementById('changeAmount').innerText = (given - total).toFixed(2) + ' ₽';
+        document.getElementById('changeDisplay').style.display = 'block';
+    } else {
+        document.getElementById('changeDisplay').style.display = 'none';
+    }
 }
 
 // ===== ОПЛАТА =====
 async function processPayment() {
     if (currentCart.length === 0) {
-        showToast('❌ Корзина пуста', true);
+        showToast('❌ Корзина пуста!', true);
+        return;
+    }
+    
+    if (!selectedPayment) {
+        showToast('❌ Выберите способ оплаты!', true);
         return;
     }
     
     const total = cartTotal;
     const points = Math.floor(total / 100) * 5;
     
+    // Проверка для наличных
+    if (selectedPayment === 'cash') {
+        const given = parseFloat(document.getElementById('cashGiven').value);
+        if (isNaN(given) || given < total) {
+            showToast('❌ Недостаточно средств!', true);
+            return;
+        }
+        const change = given - total;
+        showToast(`💰 Оплачено наличными: ${total.toFixed(2)} ₽, сдача: ${change.toFixed(2)} ₽`);
+    } else {
+        showToast(`💳 Оплачено картой: ${total.toFixed(2)} ₽`);
+    }
+    
     const purchase = {
         date: new Date().toLocaleString('ru-RU'),
         total: total,
         points: points,
         items: currentCart.map(i => `${i.name} x${i.quantity}`).join(', '),
-        cashier: user.fullName
+        cashier: user.fullName,
+        paymentMethod: selectedPayment === 'cash' ? 'Наличные' : 'Карта'
     };
     
     try {
+        // Если есть клиент - начисляем баллы
         if (currentClient) {
             const clientRef = db.ref('clients/' + currentClient.id);
             const snap = await clientRef.once('value');
@@ -195,19 +321,24 @@ async function processPayment() {
                 balance: (data.balance || 0) + points,
                 history: history
             });
-            showToast(`✅ Оплата прошла! Начислено ${points} баллов`);
-        } else {
-            showToast(`✅ Оплата прошла! Без карты баллы не начисляются`);
+            showToast(`🎉 Начислено ${points} баллов!`);
         }
         
+        // Сохраняем в историю кассира
         const cashierPurchase = {
             ...purchase,
             clientName: currentClient ? currentClient.fullName : 'Без карты'
         };
         await db.ref('cashier_history').push(cashierPurchase);
         
+        // Очищаем корзину
         currentCart = [];
+        selectedPayment = null;
         clearScannedClient();
+        document.querySelectorAll('.payment-btn').forEach(b => b.style.background = '#eef2f8');
+        document.getElementById('cashInputArea').style.display = 'none';
+        document.getElementById('changeDisplay').style.display = 'none';
+        document.getElementById('cashGiven').value = '';
         updateCartUI();
         loadCashierHistory();
         
@@ -233,13 +364,29 @@ function loadCashierHistory() {
             html += `
                 <div class="history-item">
                     <div>
-                        <strong>${item.clientName || 'Без карты'}</strong><br>
-                        <span style="font-size:0.7rem;color:#7a8a9e;">${item.date}</span>
+                        <strong>${item.clientName || 'Без карты'}</strong>
+                        <span style="font-size:0.7rem; color:#7a8a9e; display:block;">${item.date}</span>
+                        <span style="font-size:0.7rem; color:#3e5f7e;">${item.paymentMethod || 'Не указан'}</span>
                     </div>
-                    <div>${item.total} ₽ <span class="badge">+${item.points} баллов</span></div>
+                    <div style="text-align:right;">
+                        <strong>${item.total} ₽</strong>
+                        <span class="badge" style="display:block; margin-top:4px;">+${item.points} баллов</span>
+                        <span style="font-size:0.6rem; color:#7a8a9e;">${item.items || ''}</span>
+                    </div>
                 </div>
             `;
         });
         container.innerHTML = html;
     });
+}
+
+// ===== TOAST =====
+function showToast(msg, isError = false) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    toast.style.background = isError ? '#b33a34' : '#1d6f2c';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.style.display = 'none', 3000);
 }
