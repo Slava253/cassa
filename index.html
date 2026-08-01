@@ -63,10 +63,6 @@
                     </div>
                     <button onclick="clientLogin()" style="width:100%;">👤 Войти</button>
                 </div>
-
-                <div style="margin-top:16px;font-size:0.75rem;color:#7a8a9e;text-align:center;">
-                    <i class="fas fa-info-circle"></i> Админ по умолчанию: admin / admin123
-                </div>
             </div>
         </div>
     </div>
@@ -78,7 +74,6 @@
     <script src="js/firebase-config.js"></script>
     <script src="js/auth.js"></script>
     <script>
-        // Выбор роли
         function selectRole(role) {
             document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
             document.querySelector(`.role-btn[data-role="${role}"]`).classList.add('active');
@@ -88,7 +83,6 @@
             document.getElementById('clientLogin').style.display = role === 'client' ? 'block' : 'none';
         }
 
-        // Проверка сохраненной сессии
         const saved = localStorage.getItem('shop_user');
         if (saved) {
             try {
