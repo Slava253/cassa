@@ -8,21 +8,20 @@ if (!user || user.role !== 'client') {
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('clientName').innerHTML = `👤 ${user.fullName}`;
     document.getElementById('clientStoreDisplay').innerHTML = `🏪 ${user.storeName || 'Магазин'}`;
-    document.getElementById('cardNumberDisplay').innerHTML = `Номер карты: ${user.cardNumber}`;
-    document.getElementById('storeDisplay').innerHTML = `🏪 ${user.storeName || 'Магазин'}`;
     document.getElementById('clientBalance').innerText = user.balance || 0;
     
-    // Генерируем EAN-13 из номера карты
-    generateEAN13(user.cardNumber);
-    
+    // Отображаем информацию
     document.getElementById('clientInfo').innerHTML = `
         <div>
             <h3>${user.fullName}</h3>
             <span class="badge">🎫 Карта: ${user.cardNumber}</span><br>
             <span style="font-size:0.8rem;">📱 ${user.phone}</span><br>
-            <span style="font-size:0.8rem;color:#3e5f7e;">🏪 ${user.storeName || 'Магазин'}</span>
+            <span style="font-size:0.8rem;color:#3e5f7e;">✅ Единая карта для всех магазинов</span>
         </div>
     `;
+    
+    // Генерируем EAN-13 из номера карты
+    generateEAN13(user.cardNumber);
     
     loadClientHistory();
 });
@@ -30,45 +29,32 @@ document.addEventListener('DOMContentLoaded', function() {
 // ===== ГЕНЕРАЦИЯ EAN-13 ШТРИХКОДА =====
 function generateEAN13(cardNumber) {
     try {
-        // Используем номер карты как основу для EAN-13
-        // Берем первые 12 цифр (или дополняем нулями)
-        var code = cardNumber.replace(/\D/g, '');
-        // Берем последние 12 цифр или дополняем
-        if (code.length < 12) {
-            code = code.padStart(12, '0');
-        } else if (code.length > 12) {
-            code = code.substring(code.length - 12);
-        }
-        
-        // Генерируем полный EAN-13
-        var ean13 = EAN13.generate(code);
-        
-        // Отображаем на Canvas
         var canvas = document.getElementById('barcodeCanvas');
-        if (canvas) {
-            EAN13.draw(canvas, ean13, {
-                width: 350,
-                height: 160,
-                fontSize: 18,
-                bgColor: '#ffffff',
-                fgColor: '#1a1a2e'
-            });
-        }
+        if (!canvas) return;
+        
+        // Используем номер карты для генерации EAN-13
+        var ean13 = EAN13.generate(cardNumber);
+        
+        // Рисуем штрихкод
+        EAN13.draw(canvas, ean13, {
+            width: 350,
+            height: 160,
+            fontSize: 18,
+            bgColor: '#ffffff',
+            fgColor: '#1a1a2e'
+        });
         
         // Показываем номер
-        var display = document.getElementById('barcodeNumber');
-        if (display) {
-            display.textContent = ean13;
-        }
+        document.getElementById('barcodeNumber').textContent = ean13;
         
         console.log('✅ EAN-13 сгенерирован:', ean13);
     } catch(e) {
         console.error('Ошибка генерации EAN-13:', e);
-        // Показываем обычный штрихкод как запасной вариант
-        document.getElementById('barcodeDisplay').innerHTML = cardNumber;
+        document.getElementById('barcodeNumber').textContent = cardNumber || 'Ошибка';
     }
 }
 
+// ===== ИСТОРИЯ =====
 function loadClientHistory() {
     const container = document.getElementById('clientHistory');
     container.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
@@ -100,6 +86,7 @@ function loadClientHistory() {
         container.innerHTML = html;
     });
     
+    // Слушаем изменения баланса
     db.ref('clients/' + clientId + '/balance').on('value', snap => {
         const balance = snap.val() || 0;
         document.getElementById('clientBalance').innerText = balance;
