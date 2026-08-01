@@ -30,18 +30,20 @@ function cashierLogin() {
     db.ref('stores/' + storeId + '/cashiers').once('value', snap => {
         const cashiers = snap.val();
         let found = null;
+        let foundKey = null;
         for (let key in cashiers) {
             if (cashiers[key].login === login && cashiers[key].password === password) {
-                found = { id: key, ...cashiers[key] };
+                found = cashiers[key];
+                foundKey = key;
                 break;
             }
         }
         if (found) {
-            // Получаем информацию о магазине
             db.ref('stores/' + storeId).once('value', snap2 => {
                 const store = snap2.val();
                 const user = { 
                     ...found, 
+                    id: foundKey,
                     role: 'cashier', 
                     storeId: storeId,
                     storeName: store ? store.name : 'Неизвестный магазин'
@@ -71,20 +73,21 @@ function clientLogin() {
     db.ref('clients').orderByChild('phone').equalTo(phone).once('value', snap => {
         const clients = snap.val();
         let found = null;
+        let foundKey = null;
         for (let key in clients) {
             const c = clients[key];
-            // Проверяем, что клиент принадлежит выбранному магазину
             if (c.phone === phone && c.storeId === storeId) {
-                found = { id: key, ...c };
+                found = c;
+                foundKey = key;
                 break;
             }
         }
         if (found) {
-            // Получаем информацию о магазине
             db.ref('stores/' + storeId).once('value', snap2 => {
                 const store = snap2.val();
                 const user = { 
                     ...found, 
+                    id: foundKey,
                     role: 'client', 
                     storeId: storeId,
                     storeName: store ? store.name : 'Неизвестный магазин'
