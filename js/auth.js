@@ -14,15 +14,20 @@ function adminLogin() {
 }
 
 function cashierLogin() {
+    const storeId = document.getElementById('cashierStoreSelect').value;
     const login = document.getElementById('cashierLoginInput').value.trim();
     const password = document.getElementById('cashierPasswordInput').value.trim();
     
+    if (!storeId) {
+        showToast('❌ Выберите магазин', true);
+        return;
+    }
     if (!login || !password) {
         showToast('❌ Введите логин и пароль', true);
         return;
     }
     
-    db.ref('cashiers').once('value', snap => {
+    db.ref('stores/' + storeId + '/cashiers').once('value', snap => {
         const cashiers = snap.val();
         let found = null;
         for (let key in cashiers) {
@@ -32,9 +37,18 @@ function cashierLogin() {
             }
         }
         if (found) {
-            const user = { ...found, role: 'cashier' };
-            localStorage.setItem('shop_user', JSON.stringify(user));
-            window.location.href = 'cashier.html';
+            // Получаем информацию о магазине
+            db.ref('stores/' + storeId).once('value', snap2 => {
+                const store = snap2.val();
+                const user = { 
+                    ...found, 
+                    role: 'cashier', 
+                    storeId: storeId,
+                    storeName: store ? store.name : 'Неизвестный магазин'
+                };
+                localStorage.setItem('shop_user', JSON.stringify(user));
+                window.location.href = 'cashier.html';
+            });
         } else {
             showToast('❌ Неверный логин или пароль', true);
         }
@@ -42,7 +56,13 @@ function cashierLogin() {
 }
 
 function clientLogin() {
+    const storeId = document.getElementById('clientStoreSelect').value;
     const phone = document.getElementById('clientPhoneInput').value.trim();
+    
+    if (!storeId) {
+        showToast('❌ Выберите магазин', true);
+        return;
+    }
     if (!phone) {
         showToast('❌ Введите номер телефона', true);
         return;
@@ -52,15 +72,28 @@ function clientLogin() {
         const clients = snap.val();
         let found = null;
         for (let key in clients) {
-            found = { id: key, ...clients[key] };
-            break;
+            const c = clients[key];
+            // Проверяем, что клиент принадлежит выбранному магазину
+            if (c.phone === phone && c.storeId === storeId) {
+                found = { id: key, ...c };
+                break;
+            }
         }
         if (found) {
-            const user = { ...found, role: 'client' };
-            localStorage.setItem('shop_user', JSON.stringify(user));
-            window.location.href = 'client.html';
+            // Получаем информацию о магазине
+            db.ref('stores/' + storeId).once('value', snap2 => {
+                const store = snap2.val();
+                const user = { 
+                    ...found, 
+                    role: 'client', 
+                    storeId: storeId,
+                    storeName: store ? store.name : 'Неизвестный магазин'
+                };
+                localStorage.setItem('shop_user', JSON.stringify(user));
+                window.location.href = 'client.html';
+            });
         } else {
-            showToast('❌ Клиент с таким номером не найден', true);
+            showToast('❌ Клиент с таким номером не найден в этом магазине', true);
         }
     });
 }
