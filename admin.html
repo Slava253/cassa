@@ -26,35 +26,63 @@
         </div>
 
         <div class="main-content">
-            <!-- Добавить кассира -->
-            <div class="card">
-                <div class="card-title">➕ Добавить кассира</div>
+            <!-- Создать магазин -->
+            <div class="card" style="border: 2px solid #f6b83d;">
+                <div class="card-title">🏪 Создать магазин</div>
                 <div class="form-group">
-                    <label>👤 ФИО кассира</label>
-                    <input type="text" id="cashierFullName" placeholder="Иванов Иван Иванович">
+                    <label>Название магазина</label>
+                    <input type="text" id="storeName" placeholder="Магазин 'У дома'">
+                </div>
+                <div class="form-group">
+                    <label>Адрес</label>
+                    <input type="text" id="storeAddress" placeholder="ул. Ленина, 15">
+                </div>
+                <button onclick="createStore()" class="btn-success" style="width:100%;">🏪 Создать магазин</button>
+            </div>
+
+            <!-- Список магазинов -->
+            <div class="card">
+                <div class="card-title">📋 Список магазинов</div>
+                <div id="storesList"><div class="loading-spinner">Загрузка...</div></div>
+            </div>
+
+            <!-- Добавить кассира в магазин -->
+            <div class="card">
+                <div class="card-title">➕ Добавить кассира в магазин</div>
+                <div class="form-group">
+                    <label>🏪 Выберите магазин</label>
+                    <select id="cashierStoreSelect"><option value="">Выберите магазин</option></select>
                 </div>
                 <div class="grid-2col">
-                    <div class="form-group">
-                        <label>🔑 Логин</label>
-                        <input type="text" id="cashierLogin" placeholder="ivanov">
+                    <div>
+                        <div class="form-group">
+                            <label>👤 ФИО кассира</label>
+                            <input type="text" id="cashierFullName" placeholder="Иванов Иван Иванович">
+                        </div>
+                        <div class="form-group">
+                            <label>🔑 Логин</label>
+                            <input type="text" id="cashierLogin" placeholder="ivanov">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>🔒 Пароль</label>
-                        <input type="text" id="cashierPassword" placeholder="123456">
+                    <div>
+                        <div class="form-group">
+                            <label>🔒 Пароль</label>
+                            <input type="text" id="cashierPassword" placeholder="123456">
+                        </div>
                     </div>
                 </div>
                 <button onclick="addCashier()" class="btn-login">✅ Добавить кассира</button>
             </div>
 
-            <!-- Список кассиров -->
+            <!-- Список кассиров по магазинам -->
             <div class="card">
-                <div class="card-title">📋 Список кассиров</div>
+                <div class="card-title">📋 Кассиры по магазинам</div>
                 <div id="cashiersList"><div class="loading-spinner">Загрузка...</div></div>
             </div>
 
             <!-- Список клиентов -->
             <div class="card">
-                <div class="card-title">📋 Список клиентов</div>
+                <div class="card-title">📋 Клиенты</div>
                 <div id="clientsList"><div class="loading-spinner">Загрузка...</div></div>
             </div>
         </div>
