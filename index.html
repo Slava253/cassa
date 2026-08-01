@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <meta name="theme-color" content="#1a1a2e">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="img/icon-192.png">
     <title>Магазин | Вход</title>
@@ -26,7 +25,6 @@
             <div class="card login-card">
                 <div class="card-title">🔐 Вход в систему</div>
                 
-                <!-- Овальные кнопки выбора роли -->
                 <div class="role-selector-oval">
                     <div class="role-oval active" data-role="admin" onclick="selectRole('admin')">
                         <div class="role-icon">👑</div>
@@ -56,7 +54,13 @@
 
                 <div id="cashierLogin" class="login-form" style="display:none;">
                     <div class="form-group">
-                        <label>👤 Логин кассира</label>
+                        <label>🏪 Магазин</label>
+                        <select id="cashierStoreSelect">
+                            <option value="">Выберите магазин</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>👤 Логин</label>
                         <input type="text" id="cashierLoginInput" placeholder="Введите логин">
                     </div>
                     <div class="form-group">
@@ -67,6 +71,12 @@
                 </div>
 
                 <div id="clientLogin" class="login-form" style="display:none;">
+                    <div class="form-group">
+                        <label>🏪 Магазин</label>
+                        <select id="clientStoreSelect">
+                            <option value="">Выберите магазин</option>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label>📱 Номер телефона</label>
                         <input type="tel" id="clientPhoneInput" placeholder="+7 900 123-45-67">
@@ -91,6 +101,29 @@
             document.getElementById('adminLogin').style.display = role === 'admin' ? 'block' : 'none';
             document.getElementById('cashierLogin').style.display = role === 'cashier' ? 'block' : 'none';
             document.getElementById('clientLogin').style.display = role === 'client' ? 'block' : 'none';
+            
+            if (role === 'cashier' || role === 'client') {
+                loadStores(role);
+            }
+        }
+
+        function loadStores(role) {
+            const selectId = role === 'cashier' ? 'cashierStoreSelect' : 'clientStoreSelect';
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">Загрузка...</option>';
+            
+            db.ref('stores').once('value', snap => {
+                const stores = snap.val();
+                select.innerHTML = '<option value="">Выберите магазин</option>';
+                if (stores) {
+                    for (let key in stores) {
+                        const option = document.createElement('option');
+                        option.value = key;
+                        option.textContent = stores[key].name;
+                        select.appendChild(option);
+                    }
+                }
+            });
         }
 
         const saved = localStorage.getItem('shop_user');
