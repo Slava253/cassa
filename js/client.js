@@ -1,6 +1,5 @@
 // ===== КЛИЕНТ =====
 
-// Проверка авторизации
 const user = checkAuth();
 if (!user || user.role !== 'client') {
     window.location.href = 'index.html';
@@ -11,7 +10,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('cardNumberDisplay').innerHTML = `Штрихкод: ${user.cardNumber}`;
     document.getElementById('clientBalance').innerText = user.balance || 0;
     
-    // Информация о клиенте
     document.getElementById('clientInfo').innerHTML = `
         <div>
             <h3>${user.fullName}</h3>
@@ -20,10 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     `;
     
-    // Генерация QR-кода
     generateQR(user.cardNumber || user.id);
-    
-    // Загрузка истории
     loadClientHistory();
 });
 
@@ -32,15 +27,17 @@ function generateQR(data) {
     try {
         const canvas = document.getElementById('qrCanvas');
         if (canvas) {
-            new QRious({
+            const qr = new QRCode({
                 element: canvas,
                 value: data,
-                size: 200
+                size: 200,
+                bgColor: '#ffffff',
+                fgColor: '#1a1a2e'
             });
         }
     } catch(e) {
         console.error('QR error:', e);
-        document.getElementById('qrContainer').innerHTML = `
+        document.querySelector('.qr-container').innerHTML = `
             <p style="color:#7a8a9e;">⚠️ Не удалось сгенерировать QR-код</p>
             <p style="font-size:0.8rem;">Ваш номер карты: <strong>${data}</strong></p>
         `;
@@ -81,9 +78,8 @@ function loadClientHistory() {
     db.ref('clients/' + clientId + '/balance').on('value', snap => {
         const balance = snap.val() || 0;
         document.getElementById('clientBalance').innerText = balance;
-        // Обновляем локального пользователя
-        const saved = JSON.parse(localStorage.getItem('gusc_user'));
+        const saved = JSON.parse(localStorage.getItem('shop_user'));
         saved.balance = balance;
-        localStorage.setItem('gusc_user', JSON.stringify(saved));
+        localStorage.setItem('shop_user', JSON.stringify(saved));
     });
 }
