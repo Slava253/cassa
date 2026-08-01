@@ -7,24 +7,25 @@ if (!user || user.role !== 'client') {
 
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('clientName').innerHTML = `👤 ${user.fullName}`;
+    document.getElementById('clientStoreDisplay').innerHTML = `🏪 ${user.storeName || 'Магазин'}`;
     document.getElementById('cardNumberDisplay').innerHTML = `Номер карты: ${user.cardNumber}`;
+    document.getElementById('storeDisplay').innerHTML = `🏪 ${user.storeName || 'Магазин'}`;
     document.getElementById('clientBalance').innerText = user.balance || 0;
     
-    // Показываем штрихкод
     document.getElementById('barcodeDisplay').innerHTML = user.cardNumber || user.id;
     
     document.getElementById('clientInfo').innerHTML = `
         <div>
             <h3>${user.fullName}</h3>
             <span class="badge">🎫 Карта: ${user.cardNumber}</span><br>
-            <span style="font-size:0.8rem;">📱 ${user.phone}</span>
+            <span style="font-size:0.8rem;">📱 ${user.phone}</span><br>
+            <span style="font-size:0.8rem;color:#3e5f7e;">🏪 ${user.storeName || 'Магазин'}</span>
         </div>
     `;
     
     loadClientHistory();
 });
 
-// ===== ИСТОРИЯ =====
 function loadClientHistory() {
     const container = document.getElementById('clientHistory');
     container.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
@@ -44,6 +45,7 @@ function loadClientHistory() {
                         <span style="font-size:0.7rem;color:#7a8a9e;">${item.date}</span>
                         <div style="font-weight:500;">${item.items || 'Покупка'}</div>
                         <span style="font-size:0.6rem;color:#3e5f7e;">${item.paymentMethod || ''}</span>
+                        <span style="font-size:0.6rem;color:#3e5f7e;">🏪 ${item.storeName || ''}</span>
                     </div>
                     <div style="text-align:right;">
                         <strong>${item.total} ₽</strong>
@@ -55,7 +57,6 @@ function loadClientHistory() {
         container.innerHTML = html;
     });
     
-    // Слушаем изменения баланса
     db.ref('clients/' + clientId + '/balance').on('value', snap => {
         const balance = snap.val() || 0;
         document.getElementById('clientBalance').innerText = balance;
