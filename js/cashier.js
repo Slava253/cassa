@@ -15,6 +15,46 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCartUI();
 });
 
+// ===== СОЗДАНИЕ КАРТЫ КЛИЕНТА (КАССИР) =====
+function cashierCreateClient() {
+    const fullName = document.getElementById('cashierClientName').value.trim();
+    const phone = document.getElementById('cashierClientPhone').value.trim();
+    
+    if (!fullName) {
+        showToast('❌ Введите ФИО клиента', true);
+        document.getElementById('cashierClientName').focus();
+        return;
+    }
+    if (!phone) {
+        showToast('❌ Введите телефон клиента', true);
+        document.getElementById('cashierClientPhone').focus();
+        return;
+    }
+    
+    db.ref('clients').orderByChild('phone').equalTo(phone).once('value', snap => {
+        if (snap.exists()) {
+            showToast('❌ Клиент с таким телефоном уже существует', true);
+            document.getElementById('cashierClientPhone').focus();
+            return;
+        }
+        
+        const cardNumber = '29' + Math.floor(Math.random() * 10000000000).toString().padStart(10, '0');
+        const data = { 
+            fullName: fullName, 
+            phone: phone, 
+            cardNumber: cardNumber, 
+            balance: 0, 
+            history: [] 
+        };
+        
+        db.ref('clients').push(data).then(() => {
+            document.getElementById('cashierClientName').value = '';
+            document.getElementById('cashierClientPhone').value = '';
+            showToast(`✅ Карта создана! Номер: ${cardNumber}`);
+        }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+    });
+}
+
 // ===== СКАНЕР КЛИЕНТА =====
 function scanClient() {
     const input = document.getElementById('clientScanInput').value.trim();
