@@ -43,12 +43,6 @@
                         <input type="text" id="cashierPassword" placeholder="123456">
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>📸 Фото (опционально)</label>
-                    <button onclick="document.getElementById('cashierPhoto').click()" class="small-btn">📁 Выбрать фото</button>
-                    <input type="file" id="cashierPhoto" accept="image/*" style="display:none;" onchange="onCashierPhoto(event)">
-                    <div id="cashierPhotoPreview"></div>
-                </div>
                 <button onclick="addCashier()" class="btn-login">✅ Добавить кассира</button>
             </div>
 
@@ -56,24 +50,6 @@
             <div class="card">
                 <div class="card-title">📋 Список кассиров</div>
                 <div id="cashiersList"><div class="loading-spinner">Загрузка...</div></div>
-            </div>
-
-            <!-- Создать карту клиента -->
-            <div class="card">
-                <div class="card-title">🎫 Создать карту клиента</div>
-                <div class="grid-2col">
-                    <div>
-                        <div class="form-group">
-                            <label>👤 ФИО клиента</label>
-                            <input type="text" id="clientFullName" placeholder="Петров Петр Петрович">
-                        </div>
-                        <div class="form-group">
-                            <label>📱 Телефон</label>
-                            <input type="tel" id="clientPhone" placeholder="+7 900 123-45-67">
-                        </div>
-                    </div>
-                </div>
-                <button onclick="createClientCard()" class="btn-success" style="width:100%;">🎫 Создать карту</button>
             </div>
 
             <!-- Список клиентов -->
