@@ -297,4 +297,121 @@ async function processPayment() {
     if (currentCart.length === 0) {
         showToast('❌ Корзина пуста!', true);
         return;
-   
+    }
+    
+    if (!selectedPayment) {
+        showToast('❌ Выберите способ оплаты!', true);
+        return;
+    }
+    
+    const total = Math.max(0, cartTotal - discountAmount);
+    const pointsEarned = Math.floor(total / 100) * 5;
+    
+    if (selectedPayment === 'cash') {
+        const given = parseFloat(document.getElementById('cashGiven').value);
+        if (isNaN(given) || given < total) {
+            showToast('❌ Недостаточно средств!', true);
+            return;
+        }
+        const change = given - total;
+        showToast(`💰 Оплачено наличными: ${total.toFixed(2)} ₽, сдача: ${change.toFixed(2)} ₽`);
+    } else {
+        showToast(`💳 Оплачено картой: ${total.toFixed(2)} ₽`);
+    }
+    
+    const purchase = {
+        date: new Date().toLocaleString('ru-RU'),
+        total: total,
+        originalTotal: cartTotal,
+        discount: discountAmount,
+        pointsEarned: pointsEarned,
+        pointsUsed: discountAmount * 10,
+        items: currentCart.map(i => `${i.name} x${i.quantity}`).join(', '),
+        cashier: user.fullName,
+        storeId: storeId,
+        storeName: storeName,
+        paymentMethod: selectedPayment === 'cash' ? 'Наличные' : 'Карта'
+    };
+    
+    try {
+        if (currentClient) {
+            const clientRef = db.ref('clients/' + currentClient.id);
+            const snap = await clientRef.once('value');
+            const data = snap.val() || {};
+            const history = data.history || [];
+            history.push(purchase);
+            await clientRef.update({
+                balance: (data.balance || 0) + pointsEarned - (discountAmount * 10),
+                history: history
+            });
+            showToast(`🎉 Начислено ${pointsEarned} баллов! Списано ${discountAmount * 10} баллов`);
+        }
+        
+        const cashierPurchase = {
+            ...purchase,
+            clientName: currentClient ? currentClient.fullName : 'Без карты'
+        };
+        await db.ref('cashier_history').push(cashierPurchase);
+        await db.ref('stores/' + storeId + '/history').push(cashierPurchase);
+        
+        currentCart = [];
+        discountAmount = 0;
+        selectedPayment = null;
+        clearScannedClient();
+        document.querySelectorAll('.payment-btn').forEach(b => b.style.background = '#eef2f8');
+        document.getElementById('cashInputArea').style.display = 'none';
+        document.getElementById('changeDisplay').style.display = 'none';
+        document.getElementById('cashGiven').value = '';
+        document.getElementById('discountInfo').innerHTML = '';
+        updateCartUI();
+        loadCashierHistory();
+        
+    } catch(err) {
+        showToast('❌ Ошибка: ' + err.message, true);
+    }
+}
+
+// ===== ИСТОРИЯ =====
+function loadCashierHistory() {
+    const container = document.getElementById('cashierHistory');
+    container.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
+    
+    db.ref('stores/' + storeId + '/history').orderByChild('date').limitToLast(50).on('value', snap => {
+        const data = snap.val();
+        if (!data) {
+            container.innerHTML = '<div class="empty-state">Нет покупок</div>';
+            return;
+        }
+        let html = '';
+        const items = Object.values(data).reverse();
+        items.forEach(item => {
+            html += `
+                <div class="history-item">
+                    <div>
+                        <strong>${item.clientName || 'Без карты'}</strong>
+                        <span style="font-size:0.7rem; color:#7a8a9e; display:block;">${item.date}</span>
+                        <span style="font-size:0.7rem; color:#3e5f7e;">${item.paymentMethod || 'Не указан'}</span>
+                        ${item.discount > 0 ? `<span style="font-size:0.7rem; color:#1d6f2c;">Скидка: ${item.discount} ₽</span>` : ''}
+                    </div>
+                    <div style="text-align:right;">
+                        <strong>${item.total} ₽</strong>
+                        <span class="badge" style="display:block; margin-top:4px;">+${item.pointsEarned || 0} баллов</span>
+                        ${item.pointsUsed > 0 ? `<span class="badge" style="display:block; background:#fee9e9; color:#b33a34;">-${item.pointsUsed} баллов</span>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    });
+}
+
+// ===== TOAST =====
+function showToast(msg, isError = false) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    toast.style.background = isError ? '#b33a34' : '#1d6f2c';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.style.display = 'none', 3000);
+}
