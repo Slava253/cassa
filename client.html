@@ -14,7 +14,7 @@
 </head>
 <body>
     <div class="app-container">
-        <div class="header" style="background: linear-gradient(145deg, #1a1a2e, #16213e);">
+        <div class="header">
             <div class="logo-area">
                 <h1>👤 Магазин</h1>
                 <p>Личный кабинет</p>
@@ -26,11 +26,13 @@
         </div>
 
         <div class="main-content">
+            <!-- Информация о клиенте -->
             <div class="card">
                 <div class="card-title">👤 Личный кабинет</div>
                 <div id="clientInfo" class="member-info" style="margin-bottom:16px;"></div>
             </div>
 
+            <!-- QR-код -->
             <div class="card">
                 <div class="card-title">📱 Ваш QR-код</div>
                 <div class="qr-container" style="text-align:center; padding:20px;">
@@ -40,6 +42,7 @@
                 </div>
             </div>
 
+            <!-- Баланс -->
             <div class="card">
                 <div class="card-title">⭐ Бонусный баланс</div>
                 <div style="text-align:center; padding:20px;">
@@ -49,6 +52,7 @@
                 </div>
             </div>
 
+            <!-- История -->
             <div class="card">
                 <div class="card-title">📜 История покупок</div>
                 <div id="clientHistory"><div class="loading-spinner">Загрузка...</div></div>
