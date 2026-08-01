@@ -4,12 +4,12 @@ function adminLogin() {
     const login = document.getElementById('adminLoginInput').value;
     const password = document.getElementById('adminPasswordInput').value;
     
-    if (login === '2347' && password === '2203') {
-        const user = { role: 'admin', fullName: 'Администратор', login: '2347' };
-        localStorage.setItem('gusc_user', JSON.stringify(user));
+    if (login === 'admin' && password === 'admin123') {
+        const user = { role: 'admin', fullName: 'Администратор', login: 'admin' };
+        localStorage.setItem('shop_user', JSON.stringify(user));
         window.location.href = 'admin.html';
     } else {
-        showToast('❌ Неверный логин или пароль админа', true);
+        showToast('❌ Неверный логин или пароль', true);
     }
 }
 
@@ -33,10 +33,10 @@ function cashierLogin() {
         }
         if (found) {
             const user = { ...found, role: 'cashier' };
-            localStorage.setItem('gusc_user', JSON.stringify(user));
+            localStorage.setItem('shop_user', JSON.stringify(user));
             window.location.href = 'cashier.html';
         } else {
-            showToast('❌ Неверный логин или пароль кассира', true);
+            showToast('❌ Неверный логин или пароль', true);
         }
     });
 }
@@ -57,7 +57,7 @@ function clientLogin() {
         }
         if (found) {
             const user = { ...found, role: 'client' };
-            localStorage.setItem('gusc_user', JSON.stringify(user));
+            localStorage.setItem('shop_user', JSON.stringify(user));
             window.location.href = 'client.html';
         } else {
             showToast('❌ Клиент с таким номером не найден', true);
@@ -66,13 +66,12 @@ function clientLogin() {
 }
 
 function logout() {
-    localStorage.removeItem('gusc_user');
+    localStorage.removeItem('shop_user');
     window.location.href = 'index.html';
 }
 
-// Проверка авторизации
 function checkAuth() {
-    const saved = localStorage.getItem('gusc_user');
+    const saved = localStorage.getItem('shop_user');
     if (!saved) {
         window.location.href = 'index.html';
         return null;
@@ -80,19 +79,17 @@ function checkAuth() {
     try {
         return JSON.parse(saved);
     } catch(e) {
-        localStorage.removeItem('gusc_user');
+        localStorage.removeItem('shop_user');
         window.location.href = 'index.html';
         return null;
     }
 }
 
-// Получить текущего пользователя
 function getCurrentUser() {
-    const saved = localStorage.getItem('gusc_user');
+    const saved = localStorage.getItem('shop_user');
     return saved ? JSON.parse(saved) : null;
 }
 
-// Показать toast
 function showToast(msg, isError = false) {
     const toast = document.getElementById('toast');
     if (!toast) return;
