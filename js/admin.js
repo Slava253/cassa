@@ -2,7 +2,6 @@
 
 let cashierPhotoData = null;
 
-// Проверка авторизации
 const user = checkAuth();
 if (!user || user.role !== 'admin') {
     window.location.href = 'index.html';
@@ -88,7 +87,6 @@ function loadClients() {
         let html = '';
         for (let key in data) {
             const c = data[key];
-            const history = c.history || [];
             html += `
                 <div class="member-item">
                     <div class="member-info">
@@ -139,8 +137,7 @@ function removeClient(id) {
 function viewClientHistory(id) {
     db.ref('clients/' + id + '/history').once('value', snap => {
         const history = snap.val() || [];
-        const client = db.ref('clients/' + id);
-        client.once('value', snap2 => {
+        db.ref('clients/' + id).once('value', snap2 => {
             const data = snap2.val();
             let html = `
                 <div class="modal" onclick="this.style.display='none'">
