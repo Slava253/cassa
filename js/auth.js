@@ -4,8 +4,8 @@ function adminLogin() {
     const login = document.getElementById('adminLoginInput').value;
     const password = document.getElementById('adminPasswordInput').value;
     
-    if (login === 'admin' && password === 'admin123') {
-        const user = { role: 'admin', fullName: 'Администратор', login: 'admin' };
+    if (login === '2347' && password === '2203') {
+        const user = { role: 'admin', fullName: 'Администратор', login: '2347' };
         localStorage.setItem('shop_user', JSON.stringify(user));
         window.location.href = 'admin.html';
     } else {
