@@ -41,7 +41,6 @@ var EAN13 = {
         var clean = input.replace(/\D/g, '');
         if (clean.length === 0) clean = '0';
         
-        // Берем 12 цифр, дополняем нулями
         if (clean.length < 12) {
             clean = clean.padStart(12, '0');
         } else if (clean.length > 12) {
@@ -55,11 +54,11 @@ var EAN13 = {
         if (!canvas) return;
         
         var opts = options || {};
-        var width = opts.width || 350;
-        var height = opts.height || 160;
-        var fontSize = opts.fontSize || 18;
+        var width = opts.width || 380;
+        var height = opts.height || 180;
+        var fontSize = opts.fontSize || 20;
         var bgColor = opts.bgColor || '#ffffff';
-        var fgColor = opts.fgColor || '#1a1a2e';
+        var fgColor = opts.fgColor || '#000000'; // Черный для лучшего контраста
         
         var fullCode = this.generate(code);
         if (fullCode.length !== 13) {
@@ -71,13 +70,19 @@ var EAN13 = {
         canvas.height = height;
         var ctx = canvas.getContext('2d');
         
+        // Заливаем фон
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, width, height);
         
-        var leftMargin = 20;
-        var rightMargin = 20;
-        var topMargin = 20;
-        var bottomMargin = 40;
+        // Добавляем рамку для контраста
+        ctx.strokeStyle = '#cccccc';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(2, 2, width - 4, height - 4);
+        
+        var leftMargin = 25;
+        var rightMargin = 25;
+        var topMargin = 25;
+        var bottomMargin = 45;
         var barWidth = (width - leftMargin - rightMargin) / 95;
         var barHeight = height - topMargin - bottomMargin;
         
@@ -92,13 +97,14 @@ var EAN13 = {
             x += barWidth;
         }
         
+        // Цифры под штрихкодом
         ctx.fillStyle = fgColor;
         ctx.font = fontSize + 'px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         
         var firstDigit = fullCode[0];
-        ctx.fillText(firstDigit, leftMargin + 10 * barWidth, height - 25);
+        ctx.fillText(firstDigit, leftMargin + 10 * barWidth, height - 28);
         
         var leftGroup = fullCode.substring(1, 7);
         var rightGroup = fullCode.substring(7, 13);
@@ -109,14 +115,21 @@ var EAN13 = {
         var rightWidth = 48 * barWidth;
         
         for (var j = 0; j < 6; j++) {
-            ctx.fillText(leftGroup[j], leftStart + (j + 0.5) * (leftWidth / 6), height - 25);
-            ctx.fillText(rightGroup[j], rightStart + (j + 0.5) * (rightWidth / 6), height - 25);
+            ctx.fillText(leftGroup[j], leftStart + (j + 0.5) * (leftWidth / 6), height - 28);
+            ctx.fillText(rightGroup[j], rightStart + (j + 0.5) * (rightWidth / 6), height - 28);
         }
         
-        ctx.font = '10px Arial';
+        // Подпись
+        ctx.font = '11px Arial';
         ctx.fillStyle = '#666';
         ctx.textAlign = 'right';
-        ctx.fillText('EAN-13', width - 10, height - 10);
+        ctx.fillText('EAN-13', width - 12, height - 8);
+        
+        // Дополнительная информация внизу
+        ctx.textAlign = 'left';
+        ctx.font = '9px Arial';
+        ctx.fillStyle = '#999';
+        ctx.fillText('Штрихкод для сканирования', 12, height - 8);
         
         return fullCode;
     },
