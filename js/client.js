@@ -53,7 +53,7 @@ function generateEAN13(cardNumber, color) {
     }
 }
 
-// ===== СМЕНА ЦВЕТА ШТРИХКОДА =====
+// ===== СМЕНА ЦВЕТА =====
 function changeBarcodeColor(color) {
     currentBarcodeColor = color;
     generateEAN13(user.cardNumber, color);
@@ -93,10 +93,13 @@ function loadClientHistory() {
                         <div style="font-weight:500;">${item.items || 'Покупка'}</div>
                         <span style="font-size:0.6rem;color:#3e5f7e;">${item.paymentMethod || ''}</span>
                         <span style="font-size:0.6rem;color:#3e5f7e;">🏪 ${item.storeName || ''}</span>
+                        ${item.discount > 0 ? `<span style="font-size:0.6rem;color:#1d6f2c;">✅ Скидка: ${item.discount} ₽</span>` : ''}
+                        ${item.cashGiven ? `<span style="font-size:0.6rem;color:#3e5f7e;">💵 Сдача: ${item.change} ₽</span>` : ''}
                     </div>
                     <div style="text-align:right;">
                         <strong>${item.total} ₽</strong>
-                        <span class="badge" style="display:block; margin-top:4px;">+${item.points} баллов</span>
+                        <span class="badge" style="display:block; margin-top:4px;">+${item.pointsEarned || 0} баллов</span>
+                        ${item.pointsUsed > 0 ? `<span class="badge" style="display:block; background:#fee9e9; color:#b33a34;">-${item.pointsUsed} баллов</span>` : ''}
                     </div>
                 </div>
             `;
