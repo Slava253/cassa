@@ -17,7 +17,7 @@
         <div class="header">
             <div class="logo-area">
                 <h1>👤 Магазин</h1>
-                <p>Личный кабинет</p>
+                <p id="clientStoreDisplay">Личный кабинет</p>
             </div>
             <div class="user-status">
                 <span id="clientName">👤 Клиент</span>
@@ -26,23 +26,21 @@
         </div>
 
         <div class="main-content">
-            <!-- Информация о клиенте -->
             <div class="card">
                 <div class="card-title">👤 Личный кабинет</div>
                 <div id="clientInfo" class="member-info" style="margin-bottom:16px;"></div>
             </div>
 
-            <!-- Штрихкод (вместо QR) -->
             <div class="card">
                 <div class="card-title">📱 Ваш штрихкод</div>
                 <div style="text-align:center; padding:20px; background:white; border-radius:20px; border:2px dashed #dae2ec;">
                     <div id="barcodeDisplay" style="font-family:'Courier New',monospace; font-size:2rem; letter-spacing:4px; background:#f5f5f5; padding:20px; border-radius:12px; display:inline-block; font-weight:bold;"></div>
                     <p style="font-size:0.8rem; color:#7a8a9e; margin-top:12px;">Покажите этот штрихкод кассиру</p>
                     <p id="cardNumberDisplay" style="font-size:0.7rem; color:#3e5f7e;"></p>
+                    <p id="storeDisplay" style="font-size:0.7rem; color:#3e5f7e; margin-top:4px;"></p>
                 </div>
             </div>
 
-            <!-- Баланс -->
             <div class="card">
                 <div class="card-title">⭐ Бонусный баланс</div>
                 <div style="text-align:center; padding:20px;">
@@ -52,7 +50,6 @@
                 </div>
             </div>
 
-            <!-- История -->
             <div class="card">
                 <div class="card-title">📜 История покупок</div>
                 <div id="clientHistory"><div class="loading-spinner">Загрузка...</div></div>
