@@ -23,13 +23,23 @@
         </div>
 
         <div class="main-content">
-            <div class="card" style="max-width:520px; margin:0 auto;">
+            <div class="card login-card">
                 <div class="card-title">🔐 Вход в систему</div>
                 
-                <div class="role-selector">
-                    <div class="role-btn active" data-role="admin" onclick="selectRole('admin')">👑 Админ</div>
-                    <div class="role-btn" data-role="cashier" onclick="selectRole('cashier')">💳 Касса</div>
-                    <div class="role-btn" data-role="client" onclick="selectRole('client')">👤 Клиент</div>
+                <!-- Овальные кнопки выбора роли -->
+                <div class="role-selector-oval">
+                    <div class="role-oval active" data-role="admin" onclick="selectRole('admin')">
+                        <div class="role-icon">👑</div>
+                        <div class="role-name">Админ</div>
+                    </div>
+                    <div class="role-oval" data-role="cashier" onclick="selectRole('cashier')">
+                        <div class="role-icon">💳</div>
+                        <div class="role-name">Касса</div>
+                    </div>
+                    <div class="role-oval" data-role="client" onclick="selectRole('client')">
+                        <div class="role-icon">👤</div>
+                        <div class="role-name">Клиент</div>
+                    </div>
                 </div>
 
                 <div id="adminLogin" class="login-form">
@@ -41,7 +51,7 @@
                         <label>🔒 Пароль</label>
                         <input type="password" id="adminPasswordInput" placeholder="Введите пароль">
                     </div>
-                    <button onclick="adminLogin()" style="width:100%;">👑 Войти как Админ</button>
+                    <button onclick="adminLogin()" class="btn-login">👑 Войти как Админ</button>
                 </div>
 
                 <div id="cashierLogin" class="login-form" style="display:none;">
@@ -53,7 +63,7 @@
                         <label>🔒 Пароль</label>
                         <input type="password" id="cashierPasswordInput" placeholder="Введите пароль">
                     </div>
-                    <button onclick="cashierLogin()" style="width:100%;">💳 Войти как Кассир</button>
+                    <button onclick="cashierLogin()" class="btn-login">💳 Войти как Кассир</button>
                 </div>
 
                 <div id="clientLogin" class="login-form" style="display:none;">
@@ -61,7 +71,7 @@
                         <label>📱 Номер телефона</label>
                         <input type="tel" id="clientPhoneInput" placeholder="+7 900 123-45-67">
                     </div>
-                    <button onclick="clientLogin()" style="width:100%;">👤 Войти как Клиент</button>
+                    <button onclick="clientLogin()" class="btn-login">👤 Войти как Клиент</button>
                 </div>
             </div>
         </div>
@@ -75,8 +85,8 @@
     <script src="js/auth.js"></script>
     <script>
         function selectRole(role) {
-            document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector(`.role-btn[data-role="${role}"]`).classList.add('active');
+            document.querySelectorAll('.role-oval').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.role-oval[data-role="${role}"]`).classList.add('active');
             
             document.getElementById('adminLogin').style.display = role === 'admin' ? 'block' : 'none';
             document.getElementById('cashierLogin').style.display = role === 'cashier' ? 'block' : 'none';
