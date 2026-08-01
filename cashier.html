@@ -26,22 +26,32 @@
         </div>
 
         <div class="main-content">
-            <!-- Создание карты клиента -->
+            <!-- Сканирование клиента -->
             <div class="card">
-                <div class="card-title">🎫 Создать карту</div>
-                <div class="grid-2col">
+                <div class="card-title">🎫 Найти клиента</div>
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                    <div class="form-group" style="flex:2; min-width:200px;">
+                        <label>Номер карты или телефон</label>
+                        <input type="text" id="clientScanInput" placeholder="29XXXXXXXXXX или +7 900 123-45-67">
+                    </div>
+                    <button onclick="scanClient()" style="align-self:flex-end;">🔍 Найти</button>
+                </div>
+                <div id="scannedClient" style="display:none;" class="member-item" style="margin-top:12px;"></div>
+            </div>
+
+            <!-- Списание баллов -->
+            <div id="discountSection" class="discount-section" style="display:none;">
+                <div class="flex-between">
                     <div>
-                        <div class="form-group">
-                            <label>👤 ФИО клиента</label>
-                            <input type="text" id="cashierClientName" placeholder="Петров Петр Петрович">
-                        </div>
-                        <div class="form-group">
-                            <label>📱 Телефон</label>
-                            <input type="tel" id="cashierClientPhone" placeholder="+7 900 123-45-67">
-                        </div>
+                        <strong>⭐ Баллы клиента: <span id="clientPointsDisplay" class="badge-points">0</span></strong>
+                        <div style="font-size:0.8rem; color:#3e5f7e; margin-top:4px;">10 баллов = 1 ₽ скидки</div>
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button onclick="applyDiscount()" class="btn-success" style="font-size:0.85rem;">✨ Списать баллы</button>
+                        <button onclick="removeDiscount()" class="btn-warning" style="font-size:0.85rem;">❌ Убрать скидку</button>
                     </div>
                 </div>
-                <button onclick="cashierCreateClient()" class="btn-success" style="width:100%;">🎫 Создать</button>
+                <div id="discountInfo" style="margin-top:8px; font-weight:bold; color:#1d6f2c;"></div>
             </div>
 
             <!-- Добавление товара -->
@@ -70,19 +80,6 @@
                     </div>
                 </div>
                 <button onclick="addProductToSystem()" class="btn-success" style="width:100%;">➕ Добавить</button>
-            </div>
-
-            <!-- Сканирование клиента -->
-            <div class="card">
-                <div class="card-title">🎫 Найти клиента</div>
-                <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                    <div class="form-group" style="flex:2; min-width:200px;">
-                        <label>Номер карты или телефон</label>
-                        <input type="text" id="clientScanInput" placeholder="29XXXXXXXXXX или +7 900 123-45-67">
-                    </div>
-                    <button onclick="scanClient()" style="align-self:flex-end;">🔍 Найти</button>
-                </div>
-                <div id="scannedClient" style="display:none;" class="member-item" style="margin-top:12px;"></div>
             </div>
 
             <!-- Сканирование товара -->
@@ -144,6 +141,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="js/firebase-config.js"></script>
+    <script src="js/barcode.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/cashier.js"></script>
 </body>
