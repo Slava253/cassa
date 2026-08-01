@@ -29,54 +29,56 @@
             <!-- Добавить кассира -->
             <div class="card">
                 <div class="card-title">➕ Добавить кассира</div>
+                <div class="form-group">
+                    <label>👤 ФИО кассира</label>
+                    <input type="text" id="cashierFullName" placeholder="Введите фамилию, имя, отчество" style="font-size:1rem; padding:12px 16px;">
+                </div>
                 <div class="grid-2col">
-                    <div>
-                        <div class="form-group">
-                            <label>ФИО кассира</label>
-                            <input type="text" id="cashierFullName" placeholder="Иванов Иван Иванович">
-                        </div>
-                        <div class="form-group">
-                            <label>Логин</label>
-                            <input type="text" id="cashierLogin" placeholder="придумайте логин">
-                        </div>
-                        <div class="form-group">
-                            <label>Пароль</label>
-                            <input type="text" id="cashierPassword" placeholder="придумайте пароль">
-                        </div>
+                    <div class="form-group">
+                        <label>🔑 Логин кассира</label>
+                        <input type="text" id="cashierLogin" placeholder="Придумайте логин для входа" style="font-size:1rem; padding:12px 16px;">
                     </div>
-                    <div>
-                        <div class="form-group">
-                            <label>📸 Фото</label>
-                            <button onclick="document.getElementById('cashierPhoto').click()" class="small-btn">📁 Выбрать</button>
-                            <input type="file" id="cashierPhoto" accept="image/*" style="display:none;" onchange="onCashierPhoto(event)">
-                            <div id="cashierPhotoPreview"></div>
-                        </div>
+                    <div class="form-group">
+                        <label>🔒 Пароль кассира</label>
+                        <input type="text" id="cashierPassword" placeholder="Придумайте пароль для входа" style="font-size:1rem; padding:12px 16px;">
                     </div>
                 </div>
-                <button onclick="addCashier()" style="width:100%;">✅ Добавить</button>
+                <div class="form-group">
+                    <label>📸 Фото (опционально)</label>
+                    <button onclick="document.getElementById('cashierPhoto').click()" class="small-btn">📁 Выбрать фото</button>
+                    <input type="file" id="cashierPhoto" accept="image/*" style="display:none;" onchange="onCashierPhoto(event)">
+                    <div id="cashierPhotoPreview"></div>
+                </div>
+                <button onclick="addCashier()" style="width:100%; padding:14px; font-size:1.1rem; margin-top:8px;">✅ Добавить кассира</button>
             </div>
 
             <!-- Список кассиров -->
             <div class="card">
-                <div class="card-title">📋 Кассиры</div>
+                <div class="card-title">📋 Список кассиров</div>
                 <div id="cashiersList"><div class="loading-spinner">Загрузка...</div></div>
             </div>
 
             <!-- Создать карту клиента -->
             <div class="card">
-                <div class="card-title">🎫 Создать карту</div>
+                <div class="card-title">🎫 Создать карту клиента</div>
                 <div class="grid-2col">
                     <div>
-                        <div class="form-group"><label>ФИО клиента</label><input type="text" id="clientFullName" placeholder="Петров Петр Петрович"></div>
-                        <div class="form-group"><label>📱 Телефон</label><input type="tel" id="clientPhone" placeholder="+7 900 123-45-67"></div>
+                        <div class="form-group">
+                            <label>👤 ФИО клиента</label>
+                            <input type="text" id="clientFullName" placeholder="Введите фамилию, имя, отчество" style="font-size:1rem; padding:12px 16px;">
+                        </div>
+                        <div class="form-group">
+                            <label>📱 Телефон</label>
+                            <input type="tel" id="clientPhone" placeholder="+7 900 123-45-67" style="font-size:1rem; padding:12px 16px;">
+                        </div>
                     </div>
                 </div>
-                <button onclick="createClientCard()" class="btn-success" style="width:100%;">🎫 Создать карту</button>
+                <button onclick="createClientCard()" class="btn-success" style="width:100%; padding:14px; font-size:1.1rem; margin-top:8px;">🎫 Создать карту</button>
             </div>
 
             <!-- Список клиентов -->
             <div class="card">
-                <div class="card-title">📋 Клиенты</div>
+                <div class="card-title">📋 Список клиентов</div>
                 <div id="clientsList"><div class="loading-spinner">Загрузка...</div></div>
             </div>
         </div>
