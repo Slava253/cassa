@@ -7,8 +7,11 @@ if (!user || user.role !== 'client') {
 
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('clientName').innerHTML = `👤 ${user.fullName}`;
-    document.getElementById('cardNumberDisplay').innerHTML = `Штрихкод: ${user.cardNumber}`;
+    document.getElementById('cardNumberDisplay').innerHTML = `Номер карты: ${user.cardNumber}`;
     document.getElementById('clientBalance').innerText = user.balance || 0;
+    
+    // Показываем штрихкод
+    document.getElementById('barcodeDisplay').innerHTML = user.cardNumber || user.id;
     
     document.getElementById('clientInfo').innerHTML = `
         <div>
@@ -18,31 +21,8 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     `;
     
-    generateQR(user.cardNumber || user.id);
     loadClientHistory();
 });
-
-// ===== QR-КОД =====
-function generateQR(data) {
-    try {
-        const canvas = document.getElementById('qrCanvas');
-        if (canvas) {
-            const qr = new QRCode({
-                element: canvas,
-                value: data,
-                size: 200,
-                bgColor: '#ffffff',
-                fgColor: '#1a1a2e'
-            });
-        }
-    } catch(e) {
-        console.error('QR error:', e);
-        document.querySelector('.qr-container').innerHTML = `
-            <p style="color:#7a8a9e;">⚠️ Не удалось сгенерировать QR-код</p>
-            <p style="font-size:0.8rem;">Ваш номер карты: <strong>${data}</strong></p>
-        `;
-    }
-}
 
 // ===== ИСТОРИЯ =====
 function loadClientHistory() {
@@ -63,10 +43,11 @@ function loadClientHistory() {
                     <div>
                         <span style="font-size:0.7rem;color:#7a8a9e;">${item.date}</span>
                         <div style="font-weight:500;">${item.items || 'Покупка'}</div>
+                        <span style="font-size:0.6rem;color:#3e5f7e;">${item.paymentMethod || ''}</span>
                     </div>
-                    <div>
-                        <strong>${item.total} ₽</strong> 
-                        <span class="badge">+${item.points} баллов</span>
+                    <div style="text-align:right;">
+                        <strong>${item.total} ₽</strong>
+                        <span class="badge" style="display:block; margin-top:4px;">+${item.points} баллов</span>
                     </div>
                 </div>
             `;
