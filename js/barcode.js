@@ -37,43 +37,29 @@ var EAN13 = {
     },
     
     generate: function(input) {
-        if (input.length === 13) {
-            var code = input.substring(0, 12);
-            var check = parseInt(input[12]);
-            if (this.checksum(code) !== check) {
-                input = code + this.checksum(code);
-            }
-            return input;
+        if (!input) return '0000000000000';
+        var clean = input.replace(/\D/g, '');
+        if (clean.length === 0) clean = '0';
+        
+        // Берем 12 цифр, дополняем нулями
+        if (clean.length < 12) {
+            clean = clean.padStart(12, '0');
+        } else if (clean.length > 12) {
+            clean = clean.substring(0, 12);
         }
-        if (input.length === 12) {
-            return input + this.checksum(input);
-        }
-        if (input.length === 11) {
-            var code = '0' + input;
-            return code + this.checksum(code);
-        }
-        var padded = input.padStart(11, '0');
-        var code = '0' + padded;
-        return code + this.checksum(code);
-    },
-    
-    random: function() {
-        var code = '';
-        for (var i = 0; i < 12; i++) {
-            code += Math.floor(Math.random() * 10);
-        }
-        return code + this.checksum(code);
+        
+        return clean + this.checksum(clean);
     },
     
     draw: function(canvas, code, options) {
         if (!canvas) return;
         
         var opts = options || {};
-        var width = opts.width || 300;
-        var height = opts.height || 150;
-        var fontSize = opts.fontSize || 16;
+        var width = opts.width || 350;
+        var height = opts.height || 160;
+        var fontSize = opts.fontSize || 18;
         var bgColor = opts.bgColor || '#ffffff';
-        var fgColor = opts.fgColor || '#000000';
+        var fgColor = opts.fgColor || '#1a1a2e';
         
         var fullCode = this.generate(code);
         if (fullCode.length !== 13) {
