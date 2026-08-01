@@ -2,811 +2,112 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Касса | Скидочная карта + Бонусы</title>
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            background: linear-gradient(145deg, #1e2a3a 0%, #0f1a24 100%);
-            font-family: 'Segoe UI', 'Roboto', monospace;
-            margin: 0;
-            padding: 20px;
-        }
-        .pos-container {
-            max-width: 1600px;
-            margin: 0 auto;
-            background: #2c3e2f;
-            border-radius: 48px;
-            padding: 20px;
-            border: 1px solid #d4af37;
-        }
-        .admin-panel {
-            background: #1e2a2f;
-            border-radius: 40px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .admin-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            border-bottom: 2px solid #d4af37;
-            padding-bottom: 12px;
-            margin-bottom: 20px;
-        }
-        .admin-header h3 { margin: 0; color: #ffd966; }
-        .add-product-form {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #4a6b3e;
-        }
-        .form-group { flex: 1; min-width: 150px; }
-        .form-group label { display: block; font-size: 0.75rem; color: #b9d2a5; margin-bottom: 5px; }
-        .admin-input {
-            width: 100%;
-            padding: 12px 15px;
-            background: #fef9e6;
-            border: 2px solid #6f8f5e;
-            border-radius: 40px;
-            outline: none;
-        }
-        .btn-add-product {
-            background: #4a7c59;
-            color: white;
-            padding: 12px 28px;
-            border: none;
-            border-radius: 48px;
-            cursor: pointer;
-        }
-        .products-table-wrapper {
-            max-height: 250px;
-            overflow-y: auto;
-            border-radius: 24px;
-            background: #0f1f0e;
-            padding: 5px;
-        }
-        .products-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #fef9e6;
-        }
-        .products-table th { background: #3b2a1f; color: #ffeaac; padding: 8px; text-align: left; }
-        .products-table td { padding: 6px 8px; border-bottom: 1px solid #ddd2b0; }
-        .edit-btn, .delete-product-btn {
-            background: #d6a13e;
-            border: none;
-            padding: 4px 10px;
-            border-radius: 20px;
-            cursor: pointer;
-            margin: 0 3px;
-        }
-        .delete-product-btn { background: #b13e3e; color: white; }
-        .display-area {
-            background: #1e2a1c;
-            border-radius: 32px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
-        .cart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            flex-wrap: wrap;
-            border-bottom: 2px solid #d4af37;
-            padding-bottom: 12px;
-            margin-bottom: 20px;
-        }
-        .cart-header h2 { margin: 0; color: #f7e05e; }
-        .total-info {
-            font-size: 1.5rem;
-            font-weight: bold;
-            background: #00000066;
-            padding: 8px 18px;
-            border-radius: 60px;
-        }
-        .total-info .amount { color: #f5f5b5; font-size: 1.8rem; margin-left: 10px; }
-        .cart-table-wrapper {
-            overflow-x: auto;
-            border-radius: 24px;
-            background: #0f1f0e;
-            padding: 5px;
-        }
-        .cart-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #fef9e6;
-        }
-        .cart-table th, .cart-table td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #ddd2b0; }
-        .scanner-panel {
-            background: #2f3e2c;
-            border-radius: 36px;
-            padding: 20px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .input-group { flex: 3; }
-        .barcode-input {
-            width: 100%;
-            padding: 14px 18px;
-            font-size: 1.3rem;
-            background: #fcf9e1;
-            border: 2px solid #c9b25a;
-            border-radius: 48px;
-            outline: none;
-        }
-        .quantity-group { flex: 1; }
-        .quantity-input {
-            width: 100%;
-            padding: 14px;
-            font-size: 1.2rem;
-            text-align: center;
-            border-radius: 48px;
-            border: 2px solid #c9b25a;
-            background: #fcf9e1;
-        }
-        .action-buttons { flex: 1; display: flex; gap: 10px; }
-        .btn {
-            padding: 12px 18px;
-            font-weight: bold;
-            border: none;
-            border-radius: 48px;
-            cursor: pointer;
-            background: #2d2b1c;
-            color: #ffefb9;
-        }
-        .btn-primary { background: #d6a13e; color: #1f2a0e; }
-        .btn-success { background: #2f6b2f; color: white; }
-        .btn-warning { background: #5d5a2c; }
-        .card-info {
-            background: #1e2a1c;
-            border-radius: 24px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .card-badge { background: #2c6b2c; padding: 8px 16px; border-radius: 40px; color: #ffd966; }
-        .points-badge { background: #d6a13e; padding: 8px 16px; border-radius: 40px; color: #1f2a0e; font-weight: bold; }
-        .discount-btn { background: #ffc107; color: #1f2a0e; padding: 10px 20px; border: none; border-radius: 40px; cursor: pointer; font-weight: bold; }
-        .payment-area {
-            background: #232e1c;
-            border-radius: 32px;
-            padding: 15px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .info-message {
-            background: #191e12;
-            border-radius: 28px;
-            padding: 10px 20px;
-            color: #eedb77;
-            margin-top: 15px;
-            border-left: 5px solid gold;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background: #2c3e2f;
-            padding: 30px;
-            border-radius: 40px;
-            border: 2px solid #d4af37;
-            min-width: 350px;
-        }
-        .modal-content h3 { color: #ffd966; text-align: center; }
-        .payment-methods { display: flex; gap: 15px; margin: 20px 0; }
-        .payment-method-btn {
-            flex: 1;
-            padding: 15px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border: 2px solid #c9b25a;
-            border-radius: 40px;
-            background: #fef9e6;
-            cursor: pointer;
-        }
-        .cash-input-area { margin: 20px 0; display: none; }
-        .cash-input {
-            width: 100%;
-            padding: 12px;
-            font-size: 1.2rem;
-            border-radius: 40px;
-            border: 2px solid #c9b25a;
-        }
-        .change-display {
-            background: #1e2a1c;
-            padding: 15px;
-            border-radius: 30px;
-            margin: 15px 0;
-            text-align: center;
-        }
-        .change-amount { font-size: 2rem; font-weight: bold; color: #ffd966; }
-        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-confirm { background: #d6a13e; padding: 12px; border: none; border-radius: 40px; cursor: pointer; font-weight: bold; }
-        .btn-cancel { background: #5d5a2c; color: white; padding: 12px; border: none; border-radius: 40px; cursor: pointer; }
-        @media (max-width: 780px) {
-            .scanner-panel { flex-direction: column; }
-            .card-info { flex-direction: column; text-align: center; }
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="theme-color" content="#0b1e3a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
+    <title>ГУ СВС | Вход</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/mobile.css">
 </head>
 <body>
-    <div class="pos-container">
-        <div class="admin-panel">
-            <div class="admin-header">
-                <h3>🏪 Управление товарами</h3>
-            </div>
-            <div class="add-product-form">
-                <div class="form-group">
-                    <label>Штрихкод</label>
-                    <input type="text" id="newBarcode" class="admin-input">
-                </div>
-                <div class="form-group">
-                    <label>Название</label>
-                    <input type="text" id="newProductName" class="admin-input">
-                </div>
-                <div class="form-group">
-                    <label>Цена (₽)</label>
-                    <input type="number" id="newProductPrice" class="admin-input" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Цена со скидкой</label>
-                    <input type="number" id="newProductDiscountPrice" class="admin-input" step="0.01">
-                </div>
-                <button id="addProductBtn" class="btn-add-product">➕ Добавить</button>
-            </div>
-            <div class="products-table-wrapper">
-                <table class="products-table">
-                    <thead><tr><th>Штрихкод</th><th>Название</th><th>Цена</th><th>Скидка</th><th></th></thead>
-                    <tbody id="productsList"></tbody>
-                能有
+    <div class="app-container">
+        <div class="header">
+            <div class="logo-area">
+                <h1>🏪 ГУ СВС</h1>
+                <p>Государственные услуги • Касса • Бонусы</p>
             </div>
         </div>
 
-        <div id="cardInfoPanel" class="card-info" style="display: none;">
-            <div class="card-badge" id="cardUserName">🎫 Карта: ---</div>
-            <div class="points-badge" id="cardPoints">⭐ Баллы: 0</div>
-            <button id="usePointsBtn" class="discount-btn">✨ Списать баллы (10 баллов = 1₽)</button>
-        </div>
-
-        <div class="display-area">
-            <div class="cart-header">
-                <h2>🛒 Корзина</h2>
-                <div class="total-info">💰 Итого: <span class="amount" id="totalAmount">0.00</span> ₽</div>
-            </div>
-            <div class="cart-table-wrapper">
-                <table class="cart-table">
-                    <thead><tr><th>Товар</th><th>Штрихкод</th><th>Цена</th><th>Кол-во</th><th>Сумма</th><th></th></thead>
-                    <tbody id="cartBody"></tbody>
-                能有
-            </div>
-        </div>
-
-        <div class="scanner-panel">
-            <div class="input-group">
-                <label>🔍 Сканируйте штрихкод</label>
-                <input type="text" id="barcodeInput" class="barcode-input" placeholder="Товар, карта, *число, /пакет" autofocus>
-            </div>
-            <div class="quantity-group">
-                <label>Количество</label>
-                <input type="number" id="quantityInput" class="quantity-input" value="1">
-            </div>
-            <div class="action-buttons">
-                <button id="addBtn" class="btn btn-primary">➕ Добавить</button>
-                <button id="clearCartBtn" class="btn btn-warning">🗑 Очистить</button>
-            </div>
-        </div>
-
-        <div class="payment-area">
-            <button id="paymentBtn" class="btn btn-success">💵 Оплатить</button>
-            <div id="paymentStatus" class="payment-status">ГОТОВ</div>
-            <button id="demoBtn" class="btn" style="background:#4a6d3c;">📦 Демо-товары</button>
-        </div>
-        <div id="infoMessage" class="info-message">
-            ✅ Сканер активен | *число - изменить последний товар | / - пакет (6₽)<br>
-            🎫 Сканируйте электронную карту покупателя (29XXXXXXXXXX)
-        </div>
-    </div>
-
-    <div id="paymentModal" class="modal">
-        <div class="modal-content">
-            <h3>💳 Выберите способ оплаты</h3>
-            <div class="payment-methods">
-                <button id="cashMethod" class="payment-method-btn">💵 Наличные</button>
-                <button id="cardMethod" class="payment-method-btn">💳 Безналичный</button>
-            </div>
-            <div id="cashArea" class="cash-input-area">
-                <label>💰 Сумма от покупателя:</label>
-                <input type="number" id="cashAmount" class="cash-input" step="0.01">
-                <div id="changeDisplay" class="change-display" style="display: none;">
-                    <p>💵 Сдача:</p>
-                    <p class="change-amount" id="changeAmount">0.00 ₽</p>
+        <div class="main-content">
+            <div class="card" style="max-width:520px; margin:0 auto;">
+                <div class="card-title">🔐 Вход в систему</div>
+                
+                <div class="role-selector">
+                    <div class="role-btn active" data-role="admin" onclick="selectRole('admin')">👑 Админ</div>
+                    <div class="role-btn" data-role="cashier" onclick="selectRole('cashier')">💳 Касса</div>
+                    <div class="role-btn" data-role="client" onclick="selectRole('client')">👤 Клиент</div>
                 </div>
-            </div>
-            <div class="modal-buttons">
-                <button id="confirmPayment" class="btn-confirm">✅ Подтвердить</button>
-                <button id="closePaymentModal" class="btn-cancel">❌ Отмена</button>
+
+                <div id="adminLogin" class="login-form">
+                    <div class="form-group">
+                        <label>👤 Логин</label>
+                        <input type="text" id="adminLoginInput" placeholder="Введите логин" value="2347">
+                    </div>
+                    <div class="form-group">
+                        <label>🔒 Пароль</label>
+                        <input type="password" id="adminPasswordInput" placeholder="Введите пароль" value="2203">
+                    </div>
+                    <button onclick="adminLogin()" style="width:100%;">👑 Войти как Админ</button>
+                </div>
+
+                <div id="cashierLogin" class="login-form" style="display:none;">
+                    <div class="form-group">
+                        <label>👤 Логин кассира</label>
+                        <input type="text" id="cashierLoginInput" placeholder="Введите логин">
+                    </div>
+                    <div class="form-group">
+                        <label>🔒 Пароль</label>
+                        <input type="password" id="cashierPasswordInput" placeholder="Введите пароль">
+                    </div>
+                    <button onclick="cashierLogin()" style="width:100%;">💳 Войти как Кассир</button>
+                </div>
+
+                <div id="clientLogin" class="login-form" style="display:none;">
+                    <div class="form-group">
+                        <label>📱 Номер телефона</label>
+                        <input type="tel" id="clientPhoneInput" placeholder="+7 900 123-45-67">
+                    </div>
+                    <button onclick="clientLogin()" style="width:100%;">👤 Войти как Клиент</button>
+                </div>
+
+                <div style="margin-top:16px;font-size:0.75rem;color:#7a8a9e;text-align:center;">
+                    <i class="fas fa-info-circle"></i> Админ: логин 2347 / пароль 2203
+                </div>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        const firebaseConfig = {
-            apiKey: "AIzaSyBe8_SP2dKV4kbd0D2IxIRjRxRVw_84V1A",
-            authDomain: "cassa-1b4f0.firebaseapp.com",
-            projectId: "cassa-1b4f0",
-            storageBucket: "cassa-1b4f0.firebasestorage.app",
-            messagingSenderId: "415410879122",
-            appId: "1:415410879122:web:aa1653e8fd20d318d9044b",
-            measurementId: "G-CN8X1GYW71"
-        };
+    <div id="toast" class="success-toast" style="display:none;"></div>
 
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, updateDoc, addDoc, collection, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        let productsDatabase = new Map();
-        let cart = [];
-        let nextId = 1;
-        let currentCardUser = null;
-        let discountAmount = 0;
-
-        const defaultProducts = [
-            { barcode: "4601234567890", name: "Молоко", price: 89.90, discountPrice: 79.90 },
-            { barcode: "4605678901234", name: "Хлеб", price: 54.50, discountPrice: 48.50 },
-            { barcode: "5449000214911", name: "Coca-Cola", price: 95.00, discountPrice: 85.00 },
-            { barcode: "4609876543210", name: "Шоколад", price: 119.99, discountPrice: 99.99 }
-        ];
-
-        function initProducts() {
-            defaultProducts.forEach(p => {
-                if (!productsDatabase.has(p.barcode)) {
-                    productsDatabase.set(p.barcode, { ...p });
-                }
-            });
-            renderProductsList();
-        }
-
-        function renderProductsList() {
-            const productsList = document.getElementById('productsList');
-            if (productsDatabase.size === 0) {
-                productsList.innerHTML = '运转<td colspan="5">Нет товаров</tr>';
-                return;
-            }
-            let html = '';
-            for (let [barcode, p] of productsDatabase) {
-                html += `<tr>
-                    <td>${barcode}</td>
-                    <td>${p.name}</td>
-                    <td>${p.price.toFixed(2)} ₽</td>
-                    <td>${p.discountPrice.toFixed(2)} ₽</td>
-                    <td>
-                        <button class="edit-btn" data-barcode="${barcode}">✏️</button>
-                        <button class="delete-product-btn" data-barcode="${barcode}">🗑</button>
-                    </td>
-                </tr>`;
-            }
-            productsList.innerHTML = html;
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Выбор роли
+        function selectRole(role) {
+            document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.role-btn[data-role="${role}"]`).classList.add('active');
             
-            document.querySelectorAll('.edit-btn').forEach(btn => {
-                btn.onclick = () => editProduct(btn.dataset.barcode);
-            });
-            document.querySelectorAll('.delete-product-btn').forEach(btn => {
-                btn.onclick = () => deleteProduct(btn.dataset.barcode);
-            });
+            document.getElementById('adminLogin').style.display = role === 'admin' ? 'block' : 'none';
+            document.getElementById('cashierLogin').style.display = role === 'cashier' ? 'block' : 'none';
+            document.getElementById('clientLogin').style.display = role === 'client' ? 'block' : 'none';
         }
 
-        function editProduct(barcode) {
-            const p = productsDatabase.get(barcode);
-            const newPrice = prompt('Новая цена (обычная):', p.price);
-            const newDiscount = prompt('Новая цена со скидкой:', p.discountPrice);
-            if (newPrice && newDiscount) {
-                p.price = parseFloat(newPrice);
-                p.discountPrice = parseFloat(newDiscount);
-                productsDatabase.set(barcode, p);
-                renderProductsList();
-                showMessage(`Цена "${p.name}" обновлена`);
-            }
+        // Показать toast
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            toast.style.background = isError ? '#b33a34' : '#1d6f2c';
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => toast.style.display = 'none', 3000);
         }
 
-        function deleteProduct(barcode) {
-            if (confirm('Удалить товар?')) {
-                productsDatabase.delete(barcode);
-                renderProductsList();
-                showMessage('Товар удален');
-            }
-        }
-
-        function addProductToDatabase(barcode, name, price, discountPrice) {
-            if (!barcode || !name) {
-                showMessage('Заполните все поля!', true);
-                return false;
-            }
-            productsDatabase.set(barcode, {
-                name, price: parseFloat(price), discountPrice: parseFloat(discountPrice)
-            });
-            renderProductsList();
-            showMessage(`✅ Товар "${name}" добавлен`);
-            return true;
-        }
-
-        function renderCart() {
-            const cartBody = document.getElementById('cartBody');
-            if (cart.length === 0) {
-                cartBody.innerHTML = '<tr><td colspan="6">Корзина пуста</td></tr>';
-                updateTotal();
-                return;
-            }
-            let html = '';
-            for (let item of cart) {
-                const sum = item.price * item.quantity;
-                html += `<tr>
-                    <td>${item.name}</td>
-                    <td>${item.barcode}</td>
-                    <td>${item.price.toFixed(2)} ₽</td>
-                    <td>${item.quantity}</td>
-                    <td>${sum.toFixed(2)} ₽</td>
-                    <td></td>
-                </tr>`;
-            }
-            cartBody.innerHTML = html;
-            updateTotal();
-        }
-
-        function updateTotal() {
-            let total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
-            total = Math.max(0, total - discountAmount);
-            document.getElementById('totalAmount').innerText = total.toFixed(2);
-        }
-
-        function showMessage(msg, isError = false) {
-            const infoMessageDiv = document.getElementById('infoMessage');
-            infoMessageDiv.innerHTML = isError ? `⚠️ ${msg}` : `✅ ${msg}`;
-            infoMessageDiv.style.borderLeftColor = isError ? '#d9534f' : '#ffd966';
-            setTimeout(() => {
-                if (infoMessageDiv.innerHTML.includes(msg)) {
-                    infoMessageDiv.innerHTML = '✅ Сканер активен | *число - изменить последний товар | / - пакет (6₽)<br>🎫 Сканируйте электронную карту покупателя (29XXXXXXXXXX)';
-                }
-            }, 3000);
-        }
-
-        async function loadCardByBarcode(barcode) {
+        // Проверка сохраненной сессии
+        const saved = localStorage.getItem('gusc_user');
+        if (saved) {
             try {
-                const userDoc = await getDoc(doc(db, "users", barcode));
-                if (userDoc.exists()) {
-                    currentCardUser = { id: barcode, ...userDoc.data() };
-                    document.getElementById('cardUserName').innerHTML = `🎫 ${currentCardUser.name}`;
-                    document.getElementById('cardPoints').innerHTML = `⭐ Баллы: ${currentCardUser.balance || 0}`;
-                    document.getElementById('cardInfoPanel').style.display = 'flex';
-                    showMessage(`🎫 Карта ${currentCardUser.name} | Баллов: ${currentCardUser.balance || 0}`);
-                    return true;
-                } else {
-                    showMessage('❌ Карта не найдена', true);
-                    return false;
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки карты:', error);
-                showMessage('Ошибка загрузки карты', true);
-                return false;
-            }
+                const user = JSON.parse(saved);
+                if (user.role === 'admin') window.location.href = 'admin.html';
+                else if (user.role === 'cashier') window.location.href = 'cashier.html';
+                else if (user.role === 'client') window.location.href = 'client.html';
+            } catch(e) { localStorage.removeItem('gusc_user'); }
         }
-
-        async function usePoints() {
-            if (!currentCardUser) {
-                showMessage('Сначала отсканируйте карту!', true);
-                return;
-            }
-            const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
-            const availablePoints = currentCardUser.balance || 0;
-            const maxDiscount = Math.floor(availablePoints / 10);
-            
-            if (maxDiscount <= 0) {
-                showMessage('Недостаточно баллов для списания!', true);
-                return;
-            }
-            
-            const useAmount = Math.min(total, maxDiscount);
-            discountAmount = useAmount;
-            updateTotal();
-            
-            showMessage(`✨ Списано ${useAmount} ₽ (${useAmount * 10} баллов)`, false);
-        }
-
-        async function completePurchase(paymentMethod, cashGiven = null) {
-            const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
-            const finalTotal = total - discountAmount;
-            
-            if (cart.length === 0) {
-                showMessage('Корзина пуста!', true);
-                return false;
-            }
-            
-            if (paymentMethod === 'cash') {
-                if (!cashGiven || cashGiven < finalTotal) {
-                    showMessage('Недостаточно средств!', true);
-                    return false;
-                }
-                const change = cashGiven - finalTotal;
-                showMessage(`💰 Оплачено наличными: ${finalTotal} ₽ | Сдача: ${change.toFixed(2)} ₽`, false);
-            } else {
-                showMessage(`💳 Оплачено картой: ${finalTotal} ₽`, false);
-            }
-            
-            const pointsEarned = Math.floor(finalTotal / 10);
-            
-            if (currentCardUser) {
-                try {
-                    const userRef = doc(db, "users", currentCardUser.id);
-                    await updateDoc(userRef, {
-                        balance: increment(pointsEarned - (discountAmount * 10)),
-                        totalSpent: increment(finalTotal)
-                    });
-                    
-                    await addDoc(collection(db, "purchases"), {
-                        userId: currentCardUser.id,
-                        userName: currentCardUser.name,
-                        amount: finalTotal,
-                        originalAmount: total,
-                        discount: discountAmount,
-                        pointsEarned: pointsEarned,
-                        pointsUsed: discountAmount * 10,
-                        cart: cart.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
-                        date: serverTimestamp(),
-                        createdAt: new Date().toISOString()
-                    });
-                    
-                    showMessage(`🎉 Начислено ${pointsEarned} баллов!`, false);
-                } catch (error) {
-                    console.error('Ошибка записи:', error);
-                    showMessage('Ошибка записи в базу', true);
-                }
-            }
-            
-            cart = [];
-            discountAmount = 0;
-            currentCardUser = null;
-            document.getElementById('cardInfoPanel').style.display = 'none';
-            renderCart();
-            return true;
-        }
-
-        function addPackage() {
-            const existing = cart.find(i => i.barcode === 'PACKAGE');
-            if (existing) {
-                existing.quantity++;
-                showMessage(`🛍 Пакет добавлен. Всего: ${existing.quantity}`);
-            } else {
-                cart.push({ id: nextId++, barcode: 'PACKAGE', name: 'Пакет', price: 6, quantity: 1 });
-                showMessage('🛍 Пакет добавлен (6₽)');
-            }
-            renderCart();
-        }
-
-        function changeLastItemQuantity(newQty) {
-            if (cart.length === 0) {
-                showMessage('Корзина пуста!', true);
-                return;
-            }
-            let lastNonPackage = null;
-            for (let i = cart.length - 1; i >= 0; i--) {
-                if (cart[i].barcode !== 'PACKAGE') {
-                    lastNonPackage = cart[i];
-                    break;
-                }
-            }
-            if (!lastNonPackage) {
-                showMessage('Нет товаров для изменения!', true);
-                return;
-            }
-            const oldQty = lastNonPackage.quantity;
-            lastNonPackage.quantity = newQty;
-            renderCart();
-            showMessage(`✏️ Количество "${lastNonPackage.name}" изменено: ${oldQty} → ${newQty}`);
-        }
-
-        function handleCommand(input) {
-            if (input === '/') {
-                addPackage();
-                return true;
-            }
-            if (input.startsWith('*')) {
-                const num = parseInt(input.substring(1));
-                if (!isNaN(num) && num > 0) {
-                    changeLastItemQuantity(num);
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        function addToCart(barcode, quantity) {
-            const product = productsDatabase.get(barcode);
-            if (!product) {
-                showMessage(`Товар ${barcode} не найден`, true);
-                return false;
-            }
-            const price = currentCardUser ? product.discountPrice : product.price;
-            const existing = cart.find(i => i.barcode === barcode);
-            if (existing) {
-                existing.quantity += quantity;
-                showMessage(`➕ ${product.name} +${quantity} (всего ${existing.quantity})`);
-            } else {
-                cart.push({ id: nextId++, barcode, name: product.name, price, quantity });
-                showMessage(`✅ ${product.name} добавлен (${quantity} шт.)`);
-            }
-            renderCart();
-            return true;
-        }
-
-        async function processScannedBarcode(barcode, quantity) {
-            if (barcode.startsWith('29') && barcode.length === 12) {
-                await loadCardByBarcode(barcode);
-                return true;
-            }
-            addToCart(barcode, quantity);
-            return true;
-        }
-
-        // DOM элементы
-        const barcodeInput = document.getElementById('barcodeInput');
-        const quantityInput = document.getElementById('quantityInput');
-        const addBtn = document.getElementById('addBtn');
-        const clearCartBtn = document.getElementById('clearCartBtn');
-        const paymentBtn = document.getElementById('paymentBtn');
-        const demoBtn = document.getElementById('demoBtn');
-        const usePointsBtn = document.getElementById('usePointsBtn');
-
-        barcodeInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const input = barcodeInput.value.trim();
-                if (handleCommand(input)) {
-                    barcodeInput.value = '';
-                    return;
-                }
-                const quantity = parseInt(quantityInput.value) || 1;
-                processScannedBarcode(input, quantity);
-                barcodeInput.value = '';
-            }
-        });
-
-        addBtn.onclick = () => {
-            const input = barcodeInput.value.trim();
-            if (handleCommand(input)) {
-                barcodeInput.value = '';
-                return;
-            }
-            const quantity = parseInt(quantityInput.value) || 1;
-            processScannedBarcode(input, quantity);
-            barcodeInput.value = '';
-        };
-
-        clearCartBtn.onclick = () => {
-            cart = [];
-            discountAmount = 0;
-            renderCart();
-            showMessage('Корзина очищена');
-        };
-
-        demoBtn.onclick = () => {
-            defaultProducts.forEach(p => {
-                if (!productsDatabase.has(p.barcode)) {
-                    productsDatabase.set(p.barcode, { ...p });
-                }
-            });
-            renderProductsList();
-            showMessage('Демо-товары загружены');
-        };
-
-        usePointsBtn.onclick = usePoints;
-
-        const paymentModal = document.getElementById('paymentModal');
-        const cashMethod = document.getElementById('cashMethod');
-        const cardMethod = document.getElementById('cardMethod');
-        const cashArea = document.getElementById('cashArea');
-        const cashAmount = document.getElementById('cashAmount');
-        const changeDisplay = document.getElementById('changeDisplay');
-        const changeAmount = document.getElementById('changeAmount');
-        const confirmPayment = document.getElementById('confirmPayment');
-        const closePaymentModal = document.getElementById('closePaymentModal');
-
-        let selectedMethod = null;
-
-        paymentBtn.onclick = () => {
-            if (cart.length === 0) {
-                showMessage('Корзина пуста!', true);
-                return;
-            }
-            selectedMethod = null;
-            cashArea.style.display = 'none';
-            changeDisplay.style.display = 'none';
-            paymentModal.style.display = 'flex';
-        };
-
-        cashMethod.onclick = () => {
-            selectedMethod = 'cash';
-            cashArea.style.display = 'block';
-            cashAmount.focus();
-        };
-
-        cardMethod.onclick = () => {
-            selectedMethod = 'card';
-            cashArea.style.display = 'none';
-            changeDisplay.style.display = 'none';
-        };
-
-        cashAmount.oninput = () => {
-            const total = cart.reduce((s, i) => s + i.price * i.quantity, 0) - discountAmount;
-            const given = parseFloat(cashAmount.value);
-            if (!isNaN(given) && given >= total) {
-                changeAmount.innerText = (given - total).toFixed(2) + ' ₽';
-                changeDisplay.style.display = 'block';
-            } else {
-                changeDisplay.style.display = 'none';
-            }
-        };
-
-        confirmPayment.onclick = async () => {
-            if (!selectedMethod) {
-                showMessage('Выберите способ оплаты!', true);
-                return;
-            }
-            let cashGiven = null;
-            if (selectedMethod === 'cash') {
-                cashGiven = parseFloat(cashAmount.value);
-                if (isNaN(cashGiven)) {
-                    showMessage('Введите сумму!', true);
-                    return;
-                }
-            }
-            await completePurchase(selectedMethod, cashGiven);
-            paymentModal.style.display = 'none';
-        };
-
-        closePaymentModal.onclick = () => {
-            paymentModal.style.display = 'none';
-        };
-
-        window.onclick = (e) => {
-            if (e.target === paymentModal) paymentModal.style.display = 'none';
-        };
-
-        document.getElementById('addProductBtn').onclick = () => {
-            addProductToDatabase(
-                document.getElementById('newBarcode').value,
-                document.getElementById('newProductName').value,
-                document.getElementById('newProductPrice').value,
-                document.getElementById('newProductDiscountPrice').value
-            );
-            document.getElementById('newBarcode').value = '';
-            document.getElementById('newProductName').value = '';
-            document.getElementById('newProductPrice').value = '';
-            document.getElementById('newProductDiscountPrice').value = '';
-        };
-
-        initProducts();
-        renderCart();
     </script>
 </body>
 </html>
