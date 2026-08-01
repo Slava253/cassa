@@ -4,7 +4,6 @@ let currentCart = [];
 let currentClient = null;
 let cartTotal = 0;
 
-// Проверка авторизации
 const user = checkAuth();
 if (!user || user.role !== 'cashier') {
     window.location.href = 'index.html';
@@ -24,7 +23,6 @@ function scanClient() {
         return;
     }
     
-    // Поиск по номеру карты или телефону
     db.ref('clients').once('value', snap => {
         const clients = snap.val();
         let found = null;
@@ -88,7 +86,7 @@ function addProduct() {
     document.getElementById('productQuantity').value = '1';
     
     updateCartUI();
-    showToast('✅ Товар добавлен в корзину');
+    showToast('✅ Товар добавлен');
 }
 
 function updateCartUI() {
@@ -147,7 +145,6 @@ async function processPayment() {
     };
     
     try {
-        // Если есть клиент
         if (currentClient) {
             const clientRef = db.ref('clients/' + currentClient.id);
             const snap = await clientRef.once('value');
@@ -163,7 +160,6 @@ async function processPayment() {
             showToast(`✅ Оплата прошла! Без карты баллы не начисляются`);
         }
         
-        // Сохраняем в историю кассира
         const cashierPurchase = {
             ...purchase,
             clientName: currentClient ? currentClient.fullName : 'Без карты'
