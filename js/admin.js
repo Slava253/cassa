@@ -5,8 +5,6 @@ if (!user || user.role !== 'admin') {
     window.location.href = 'index.html';
 }
 
-let currentStoreId = null;
-
 document.addEventListener('DOMContentLoaded', function() {
     loadStores();
     loadCashiers();
@@ -79,26 +77,31 @@ function deleteStore(id) {
     db.ref('stores/' + id).remove().then(() => {
         showToast('🗑 Магазин удалён');
         loadStoreSelects();
+        loadStores();
+        loadCashiers();
     });
 }
 
+// ===== ЗАГРУЗКА СПИСКА МАГАЗИНОВ ДЛЯ SELECT =====
 function loadStoreSelects() {
+    const select = document.getElementById('cashierStoreSelect');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">Загрузка...</option>';
+    
     db.ref('stores').once('value', snap => {
         const stores = snap.val();
-        const selects = ['cashierStoreSelect', 'cashierStoreSelect2'];
-        selects.forEach(id => {
-            const select = document.getElementById(id);
-            if (!select) return;
-            select.innerHTML = '<option value="">Выберите магазин</option>';
-            if (stores) {
-                for (let key in stores) {
-                    const option = document.createElement('option');
-                    option.value = key;
-                    option.textContent = stores[key].name;
-                    select.appendChild(option);
-                }
+        select.innerHTML = '<option value="">Выберите магазин</option>';
+        if (stores) {
+            for (let key in stores) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = stores[key].name;
+                select.appendChild(option);
             }
-        });
+        } else {
+            select.innerHTML = '<option value="">Нет магазинов</option>';
+        }
     });
 }
 
@@ -110,29 +113,56 @@ function addCashier() {
     const password = document.getElementById('cashierPassword').value.trim();
     
     if (!storeId) {
-        showToast('❌ Выберите магазин', true);
+        showToast('❌ Выберите магазин!', true);
+        document.getElementById('cashierStoreSelect').focus();
         return;
     }
-    if (!fullName || !login || !password) {
-        showToast('❌ Заполните все поля!', true);
+    if (!fullName) {
+        showToast('❌ Введите ФИО кассира', true);
+        document.getElementById('cashierFullName').focus();
+        return;
+    }
+    if (!login) {
+        showToast('❌ Введите логин кассира', true);
+        document.getElementById('cashierLogin').focus();
+        return;
+    }
+    if (!password) {
+        showToast('❌ Введите пароль кассира', true);
+        document.getElementById('cashierPassword').focus();
         return;
     }
     
-    // Проверяем уникальность логина в магазине
-    db.ref('stores/' + storeId + '/cashiers').orderByChild('login').equalTo(login).once('value', snap => {
-        if (snap.exists()) {
-            showToast('❌ Кассир с таким логином уже есть в этом магазине!', true);
+    // Проверяем, существует ли магазин
+    db.ref('stores/' + storeId).once('value', snap => {
+        if (!snap.exists()) {
+            showToast('❌ Магазин не найден!', true);
             return;
         }
         
-        const data = { fullName, login, password, createdAt: new Date().toISOString() };
-        db.ref('stores/' + storeId + '/cashiers').push(data).then(() => {
-            document.getElementById('cashierFullName').value = '';
-            document.getElementById('cashierLogin').value = '';
-            document.getElementById('cashierPassword').value = '';
-            showToast(`✅ Кассир ${fullName} добавлен в магазин!`);
-            loadCashiers();
-        }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+        // Проверяем уникальность логина в магазине
+        db.ref('stores/' + storeId + '/cashiers').orderByChild('login').equalTo(login).once('value', snap2 => {
+            if (snap2.exists()) {
+                showToast('❌ Кассир с таким логином уже есть в этом магазине!', true);
+                return;
+            }
+            
+            const data = { 
+                fullName: fullName, 
+                login: login, 
+                password: password, 
+                createdAt: new Date().toISOString() 
+            };
+            
+            db.ref('stores/' + storeId + '/cashiers').push(data).then(() => {
+                document.getElementById('cashierFullName').value = '';
+                document.getElementById('cashierLogin').value = '';
+                document.getElementById('cashierPassword').value = '';
+                showToast(`✅ Кассир ${fullName} добавлен в магазин!`);
+                loadCashiers();
+                loadStores();
+            }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+        });
     });
 }
 
@@ -147,12 +177,15 @@ function loadCashiers() {
             return;
         }
         let html = '';
+        let hasCashiers = false;
+        
         for (let storeKey in stores) {
             const store = stores[storeKey];
             const cashiers = store.cashiers || {};
             const cashierKeys = Object.keys(cashiers);
             if (cashierKeys.length === 0) continue;
             
+            hasCashiers = true;
             html += `<div style="margin-top:12px; padding:12px; background:#f8faff; border-radius:16px;">
                 <strong style="color:#1a1a2e;">🏪 ${store.name}</strong>`;
             
@@ -173,7 +206,8 @@ function loadCashiers() {
             });
             html += `</div>`;
         }
-        container.innerHTML = html || '<div class="empty-state">Нет кассиров</div>';
+        
+        container.innerHTML = hasCashiers ? html : '<div class="empty-state">Нет кассиров</div>';
     });
 }
 
@@ -181,6 +215,8 @@ function removeCashier(storeId, cashierId) {
     if (!confirm('Удалить кассира?')) return;
     db.ref('stores/' + storeId + '/cashiers/' + cashierId).remove().then(() => {
         showToast('🗑 Кассир удалён');
+        loadCashiers();
+        loadStores();
     });
 }
 
