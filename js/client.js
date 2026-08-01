@@ -12,7 +12,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('storeDisplay').innerHTML = `🏪 ${user.storeName || 'Магазин'}`;
     document.getElementById('clientBalance').innerText = user.balance || 0;
     
-    document.getElementById('barcodeDisplay').innerHTML = user.cardNumber || user.id;
+    // Генерируем EAN-13 из номера карты
+    generateEAN13(user.cardNumber);
     
     document.getElementById('clientInfo').innerHTML = `
         <div>
@@ -25,6 +26,48 @@ document.addEventListener('DOMContentLoaded', function() {
     
     loadClientHistory();
 });
+
+// ===== ГЕНЕРАЦИЯ EAN-13 ШТРИХКОДА =====
+function generateEAN13(cardNumber) {
+    try {
+        // Используем номер карты как основу для EAN-13
+        // Берем первые 12 цифр (или дополняем нулями)
+        var code = cardNumber.replace(/\D/g, '');
+        // Берем последние 12 цифр или дополняем
+        if (code.length < 12) {
+            code = code.padStart(12, '0');
+        } else if (code.length > 12) {
+            code = code.substring(code.length - 12);
+        }
+        
+        // Генерируем полный EAN-13
+        var ean13 = EAN13.generate(code);
+        
+        // Отображаем на Canvas
+        var canvas = document.getElementById('barcodeCanvas');
+        if (canvas) {
+            EAN13.draw(canvas, ean13, {
+                width: 350,
+                height: 160,
+                fontSize: 18,
+                bgColor: '#ffffff',
+                fgColor: '#1a1a2e'
+            });
+        }
+        
+        // Показываем номер
+        var display = document.getElementById('barcodeNumber');
+        if (display) {
+            display.textContent = ean13;
+        }
+        
+        console.log('✅ EAN-13 сгенерирован:', ean13);
+    } catch(e) {
+        console.error('Ошибка генерации EAN-13:', e);
+        // Показываем обычный штрихкод как запасной вариант
+        document.getElementById('barcodeDisplay').innerHTML = cardNumber;
+    }
+}
 
 function loadClientHistory() {
     const container = document.getElementById('clientHistory');
