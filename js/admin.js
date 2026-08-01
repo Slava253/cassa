@@ -32,8 +32,8 @@ function loadCashiers() {
                         ${c.photoUrl ? `<img src="${c.photoUrl}" class="member-photo">` : '<div style="width:54px;height:54px;background:#d9e2ed;border-radius:50%;display:flex;align-items:center;justify-content:center;">📷</div>'}
                         <div>
                             <strong>${c.fullName}</strong><br>
-                            <span class="badge">Кассир</span>
-                            <div style="font-size:0.7rem;color:#3e5f7e;">Логин: ${c.login}</div>
+                            <span class="badge">🔑 Логин: ${c.login}</span><br>
+                            <span style="font-size:0.7rem;color:#3e5f7e;">🔒 Пароль: ${c.password}</span>
                         </div>
                     </div>
                     <button class="small-btn danger" onclick="removeCashier('${key}')">🗑 Удалить</button>
@@ -49,21 +49,48 @@ function addCashier() {
     const login = document.getElementById('cashierLogin').value.trim();
     const password = document.getElementById('cashierPassword').value.trim();
     
-    if (!fullName || !login || !password) {
-        showToast('❌ Заполните все поля!', true);
+    if (!fullName) {
+        showToast('❌ Введите ФИО кассира', true);
+        document.getElementById('cashierFullName').focus();
         return;
     }
     
-    const data = { fullName, login, password, photoUrl: cashierPhotoData || '' };
+    if (!login) {
+        showToast('❌ Введите логин кассира', true);
+        document.getElementById('cashierLogin').focus();
+        return;
+    }
     
-    db.ref('cashiers').push(data).then(() => {
-        document.getElementById('cashierFullName').value = '';
-        document.getElementById('cashierLogin').value = '';
-        document.getElementById('cashierPassword').value = '';
-        document.getElementById('cashierPhotoPreview').innerHTML = '';
-        cashierPhotoData = null;
-        showToast('✅ Кассир добавлен');
-    }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+    if (!password) {
+        showToast('❌ Введите пароль кассира', true);
+        document.getElementById('cashierPassword').focus();
+        return;
+    }
+    
+    // Проверяем уникальность логина
+    db.ref('cashiers').orderByChild('login').equalTo(login).once('value', snap => {
+        if (snap.exists()) {
+            showToast('❌ Логин уже занят! Придумайте другой.', true);
+            document.getElementById('cashierLogin').focus();
+            return;
+        }
+        
+        const data = { 
+            fullName: fullName, 
+            login: login, 
+            password: password, 
+            photoUrl: cashierPhotoData || '' 
+        };
+        
+        db.ref('cashiers').push(data).then(() => {
+            document.getElementById('cashierFullName').value = '';
+            document.getElementById('cashierLogin').value = '';
+            document.getElementById('cashierPassword').value = '';
+            document.getElementById('cashierPhotoPreview').innerHTML = '';
+            cashierPhotoData = null;
+            showToast(`✅ Кассир ${fullName} добавлен!`);
+        }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+    });
 }
 
 function removeCashier(id) {
@@ -92,7 +119,7 @@ function loadClients() {
                     <div class="member-info">
                         <div>
                             <strong>${c.fullName}</strong><br>
-                            <span class="badge">🎫 ${c.cardNumber || key.slice(0,8)}</span><br>
+                            <span class="badge">🎫 Карта: ${c.cardNumber || key.slice(0,8)}</span><br>
                             <span style="font-size:0.7rem;">📱 ${c.phone}</span>
                         </div>
                     </div>
@@ -112,19 +139,41 @@ function createClientCard() {
     const fullName = document.getElementById('clientFullName').value.trim();
     const phone = document.getElementById('clientPhone').value.trim();
     
-    if (!fullName || !phone) {
-        showToast('❌ Заполните ФИО и телефон', true);
+    if (!fullName) {
+        showToast('❌ Введите ФИО клиента', true);
+        document.getElementById('clientFullName').focus();
         return;
     }
     
-    const cardNumber = '29' + Math.floor(Math.random() * 10000000000).toString().padStart(10, '0');
-    const data = { fullName, phone, cardNumber, balance: 0, history: [] };
+    if (!phone) {
+        showToast('❌ Введите телефон клиента', true);
+        document.getElementById('clientPhone').focus();
+        return;
+    }
     
-    db.ref('clients').push(data).then(() => {
-        document.getElementById('clientFullName').value = '';
-        document.getElementById('clientPhone').value = '';
-        showToast(`✅ Карта создана! Номер: ${cardNumber}`);
-    }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+    // Проверяем уникальность телефона
+    db.ref('clients').orderByChild('phone').equalTo(phone).once('value', snap => {
+        if (snap.exists()) {
+            showToast('❌ Клиент с таким телефоном уже существует', true);
+            document.getElementById('clientPhone').focus();
+            return;
+        }
+        
+        const cardNumber = '29' + Math.floor(Math.random() * 10000000000).toString().padStart(10, '0');
+        const data = { 
+            fullName: fullName, 
+            phone: phone, 
+            cardNumber: cardNumber, 
+            balance: 0, 
+            history: [] 
+        };
+        
+        db.ref('clients').push(data).then(() => {
+            document.getElementById('clientFullName').value = '';
+            document.getElementById('clientPhone').value = '';
+            showToast(`✅ Карта создана! Номер: ${cardNumber}`);
+        }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+    });
 }
 
 function removeClient(id) {
