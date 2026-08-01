@@ -10,8 +10,12 @@ if (!user || user.role !== 'cashier') {
     window.location.href = 'index.html';
 }
 
+const storeId = user.storeId;
+const storeName = user.storeName || 'Магазин';
+
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('cashierName').innerHTML = `👤 ${user.fullName}`;
+    document.getElementById('cashierStoreDisplay').innerHTML = `🏪 ${storeName}`;
     loadCashierHistory();
     updateCartUI();
 });
@@ -26,15 +30,26 @@ function cashierCreateClient() {
         return;
     }
     
+    // Проверяем, нет ли клиента с таким телефоном в этом магазине
     db.ref('clients').orderByChild('phone').equalTo(phone).once('value', snap => {
-        if (snap.exists()) {
-            showToast('❌ Клиент с таким телефоном уже существует', true);
+        let exists = false;
+        snap.forEach(child => {
+            if (child.val().storeId === storeId) exists = true;
+        });
+        if (exists) {
+            showToast('❌ Клиент с таким телефоном уже есть в этом магазине', true);
             return;
         }
         
         const cardNumber = '29' + Math.floor(Math.random() * 10000000000).toString().padStart(10, '0');
         const data = { 
-            fullName, phone, cardNumber, balance: 0, history: [] 
+            fullName, 
+            phone, 
+            cardNumber, 
+            storeId: storeId,
+            storeName: storeName,
+            balance: 0, 
+            history: [] 
         };
         
         db.ref('clients').push(data).then(() => {
@@ -45,7 +60,7 @@ function cashierCreateClient() {
     });
 }
 
-// ===== ДОБАВЛЕНИЕ ТОВАРА В СИСТЕМУ =====
+// ===== ДОБАВЛЕНИЕ ТОВАРА В СИСТЕМУ МАГАЗИНА =====
 function addProductToSystem() {
     const barcode = document.getElementById('productBarcode').value.trim();
     const name = document.getElementById('productName').value.trim();
@@ -73,10 +88,10 @@ function addProductToSystem() {
         return;
     }
     
-    // Проверяем, есть ли уже товар с таким штрихкодом
-    db.ref('products').orderByChild('barcode').equalTo(barcode).once('value', snap => {
+    // Проверяем, есть ли уже товар с таким штрихкодом в этом магазине
+    db.ref('stores/' + storeId + '/products').orderByChild('barcode').equalTo(barcode).once('value', snap => {
         if (snap.exists()) {
-            showToast('❌ Товар с таким штрихкодом уже существует!', true);
+            showToast('❌ Товар с таким штрихкодом уже есть в этом магазине!', true);
             return;
         }
         
@@ -88,12 +103,12 @@ function addProductToSystem() {
             createdAt: new Date().toISOString()
         };
         
-        db.ref('products').push(productData).then(() => {
+        db.ref('stores/' + storeId + '/products').push(productData).then(() => {
             document.getElementById('productBarcode').value = '';
             document.getElementById('productName').value = '';
             document.getElementById('productPrice').value = '';
             document.getElementById('productDiscountPrice').value = '';
-            showToast(`✅ Товар "${name}" добавлен в систему!`);
+            showToast(`✅ Товар "${name}" добавлен в магазин "${storeName}"!`);
         }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
     });
 }
@@ -112,7 +127,8 @@ function scanClient() {
         let foundId = null;
         for (let key in clients) {
             const c = clients[key];
-            if (c.cardNumber === input || c.phone === input) {
+            // Проверяем, что клиент принадлежит этому магазину
+            if ((c.cardNumber === input || c.phone === input) && c.storeId === storeId) {
                 found = c;
                 foundId = key;
                 break;
@@ -134,7 +150,7 @@ function scanClient() {
             `;
             showToast(`🎫 Клиент найден: ${found.fullName}`);
         } else {
-            showToast('❌ Клиент не найден. Создайте карту!', true);
+            showToast('❌ Клиент не найден в этом магазине. Создайте карту!', true);
         }
         document.getElementById('clientScanInput').value = '';
     });
@@ -157,8 +173,8 @@ function addToCart() {
         return;
     }
     
-    // Ищем товар в базе по штрихкоду
-    db.ref('products').orderByChild('barcode').equalTo(barcode).once('value', snap => {
+    // Ищем товар в базе магазина по штрихкоду
+    db.ref('stores/' + storeId + '/products').orderByChild('barcode').equalTo(barcode).once('value', snap => {
         let product = null;
         let productId = null;
         snap.forEach(child => {
@@ -167,7 +183,7 @@ function addToCart() {
         });
         
         if (!product) {
-            showToast(`❌ Товар с штрихкодом ${barcode} не найден в системе!`, true);
+            showToast(`❌ Товар с штрихкодом ${barcode} не найден в магазине!`, true);
             document.getElementById('cartBarcodeInput').value = '';
             document.getElementById('cartBarcodeInput').focus();
             return;
@@ -287,7 +303,6 @@ async function processPayment() {
     const total = cartTotal;
     const points = Math.floor(total / 100) * 5;
     
-    // Проверка для наличных
     if (selectedPayment === 'cash') {
         const given = parseFloat(document.getElementById('cashGiven').value);
         if (isNaN(given) || given < total) {
@@ -306,11 +321,12 @@ async function processPayment() {
         points: points,
         items: currentCart.map(i => `${i.name} x${i.quantity}`).join(', '),
         cashier: user.fullName,
+        storeId: storeId,
+        storeName: storeName,
         paymentMethod: selectedPayment === 'cash' ? 'Наличные' : 'Карта'
     };
     
     try {
-        // Если есть клиент - начисляем баллы
         if (currentClient) {
             const clientRef = db.ref('clients/' + currentClient.id);
             const snap = await clientRef.once('value');
@@ -331,7 +347,9 @@ async function processPayment() {
         };
         await db.ref('cashier_history').push(cashierPurchase);
         
-        // Очищаем корзину
+        // Сохраняем в историю магазина
+        await db.ref('stores/' + storeId + '/history').push(cashierPurchase);
+        
         currentCart = [];
         selectedPayment = null;
         clearScannedClient();
@@ -352,10 +370,10 @@ function loadCashierHistory() {
     const container = document.getElementById('cashierHistory');
     container.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
     
-    db.ref('cashier_history').orderByChild('date').limitToLast(50).on('value', snap => {
+    db.ref('stores/' + storeId + '/history').orderByChild('date').limitToLast(50).on('value', snap => {
         const data = snap.val();
         if (!data) {
-            container.innerHTML = '<div class="empty-state">Нет покупок</div>';
+            container.innerHTML = '<div class="empty-state">Нет покупок в этом магазине</div>';
             return;
         }
         let html = '';
