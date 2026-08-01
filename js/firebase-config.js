@@ -12,7 +12,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// Функции для работы с Firebase
+// Вспомогательные функции
 function getData(path) {
     return new Promise((resolve, reject) => {
         db.ref(path).once('value', snap => resolve(snap.val()), reject);
