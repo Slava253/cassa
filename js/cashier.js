@@ -5,6 +5,7 @@ let currentClient = null;
 let cartTotal = 0;
 let selectedPayment = null;
 let discountAmount = 0;
+let originalTotal = 0;
 
 const user = checkAuth();
 if (!user || user.role !== 'cashier') {
@@ -65,12 +66,17 @@ function scanClient() {
             document.getElementById('clientPointsDisplay').innerText = found.balance || 0;
             document.getElementById('discountInfo').innerHTML = '';
             discountAmount = 0;
-            updateCartUI();
             
-            showToast(`🎫 Клиент найден: ${found.fullName}`);
+            // Обновляем цены в корзине со скидкой
+            updateCartPricesWithDiscount();
+            
+            showToast(`🎫 Карта найдена: ${found.fullName}`);
         } else {
             showToast('❌ Клиент не найден', true);
             document.getElementById('discountSection').style.display = 'none';
+            currentClient = null;
+            // Возвращаем обычные цены
+            updateCartPricesWithoutDiscount();
         }
         document.getElementById('clientScanInput').value = '';
     });
@@ -83,7 +89,45 @@ function clearScannedClient() {
     document.getElementById('scannedClient').innerHTML = '';
     document.getElementById('discountSection').style.display = 'none';
     document.getElementById('discountInfo').innerHTML = '';
+    // Возвращаем обычные цены
+    updateCartPricesWithoutDiscount();
     updateCartUI();
+}
+
+// ===== ОБНОВЛЕНИЕ ЦЕН В КОРЗИНЕ =====
+function updateCartPricesWithDiscount() {
+    if (!currentClient) return;
+    
+    for (let item of currentCart) {
+        // Ищем товар в базе магазина
+        db.ref('stores/' + storeId + '/products').orderByChild('barcode').equalTo(item.barcode).once('value', snap => {
+            let product = null;
+            snap.forEach(child => {
+                product = child.val();
+            });
+            if (product) {
+                // Меняем цену на цену со скидкой
+                item.price = product.discountPrice;
+                updateCartUI();
+            }
+        });
+    }
+}
+
+function updateCartPricesWithoutDiscount() {
+    for (let item of currentCart) {
+        db.ref('stores/' + storeId + '/products').orderByChild('barcode').equalTo(item.barcode).once('value', snap => {
+            let product = null;
+            snap.forEach(child => {
+                product = child.val();
+            });
+            if (product) {
+                // Возвращаем обычную цену
+                item.price = product.price;
+                updateCartUI();
+            }
+        });
+    }
 }
 
 // ===== СПИСАНИЕ БАЛЛОВ =====
@@ -107,11 +151,9 @@ function applyDiscount() {
         return;
     }
     
-    // Списание баллов: 10 баллов = 1 ₽
     const useAmount = Math.min(total, maxDiscount);
     discountAmount = useAmount;
     
-    // Обновляем отображение
     document.getElementById('discountInfo').innerHTML = `✅ Списано ${useAmount * 10} баллов = ${useAmount.toFixed(2)} ₽ скидки`;
     document.getElementById('discountInfo').style.color = '#1d6f2c';
     document.getElementById('clientPointsDisplay').innerText = currentClient.balance - (useAmount * 10);
@@ -189,6 +231,7 @@ function addToCart() {
             return;
         }
         
+        // Если есть клиент - используем цену со скидкой
         const price = currentClient ? product.discountPrice : product.price;
         
         const existing = currentCart.find(item => item.barcode === barcode);
@@ -215,6 +258,7 @@ function addToCart() {
 function updateCartUI() {
     const container = document.getElementById('cartList');
     cartTotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    originalTotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const finalTotal = Math.max(0, cartTotal - discountAmount);
     document.getElementById('cartTotal').innerText = finalTotal.toFixed(2);
     
@@ -230,6 +274,7 @@ function updateCartUI() {
                 <div>
                     <strong>${item.name}</strong>
                     <span style="font-size:0.7rem; color:#7a8a9e; display:block;">Штрихкод: ${item.barcode}</span>
+                    ${currentClient ? '<span style="font-size:0.7rem; color:#1d6f2c;">✅ Со скидкой</span>' : ''}
                 </div>
                 <div style="text-align:right;">
                     ${item.quantity} шт. × ${item.price.toFixed(2)} ₽ = ${(item.price * item.quantity).toFixed(2)} ₽
@@ -306,14 +351,16 @@ async function processPayment() {
     
     const total = Math.max(0, cartTotal - discountAmount);
     const pointsEarned = Math.floor(total / 100) * 5;
+    let cashGiven = null;
+    let change = 0;
     
     if (selectedPayment === 'cash') {
-        const given = parseFloat(document.getElementById('cashGiven').value);
-        if (isNaN(given) || given < total) {
+        cashGiven = parseFloat(document.getElementById('cashGiven').value);
+        if (isNaN(cashGiven) || cashGiven < total) {
             showToast('❌ Недостаточно средств!', true);
             return;
         }
-        const change = given - total;
+        change = cashGiven - total;
         showToast(`💰 Оплачено наличными: ${total.toFixed(2)} ₽, сдача: ${change.toFixed(2)} ₽`);
     } else {
         showToast(`💳 Оплачено картой: ${total.toFixed(2)} ₽`);
@@ -322,7 +369,7 @@ async function processPayment() {
     const purchase = {
         date: new Date().toLocaleString('ru-RU'),
         total: total,
-        originalTotal: cartTotal,
+        originalTotal: originalTotal,
         discount: discountAmount,
         pointsEarned: pointsEarned,
         pointsUsed: discountAmount * 10,
@@ -330,7 +377,9 @@ async function processPayment() {
         cashier: user.fullName,
         storeId: storeId,
         storeName: storeName,
-        paymentMethod: selectedPayment === 'cash' ? 'Наличные' : 'Карта'
+        paymentMethod: selectedPayment === 'cash' ? 'Наличные' : 'Карта',
+        cashGiven: selectedPayment === 'cash' ? cashGiven : null,
+        change: selectedPayment === 'cash' ? change : null
     };
     
     try {
@@ -392,6 +441,7 @@ function loadCashierHistory() {
                         <span style="font-size:0.7rem; color:#7a8a9e; display:block;">${item.date}</span>
                         <span style="font-size:0.7rem; color:#3e5f7e;">${item.paymentMethod || 'Не указан'}</span>
                         ${item.discount > 0 ? `<span style="font-size:0.7rem; color:#1d6f2c;">Скидка: ${item.discount} ₽</span>` : ''}
+                        ${item.cashGiven ? `<span style="font-size:0.7rem; color:#3e5f7e;">💵 Дано: ${item.cashGiven} ₽ | Сдача: ${item.change} ₽</span>` : ''}
                     </div>
                     <div style="text-align:right;">
                         <strong>${item.total} ₽</strong>
