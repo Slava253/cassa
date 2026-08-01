@@ -34,11 +34,28 @@
             <!-- EAN-13 Штрихкод -->
             <div class="card">
                 <div class="card-title">📱 Ваш штрихкод EAN-13</div>
+                
+                <!-- Выбор цвета штрихкода -->
+                <div style="margin-bottom:16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                    <label style="font-weight:600; font-size:0.85rem;">Цвет штрихкода:</label>
+                    <button onclick="changeBarcodeColor('#000000')" class="color-btn" style="background:#000000; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
+                    <button onclick="changeBarcodeColor('#1a1a2e')" class="color-btn" style="background:#1a1a2e; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
+                    <button onclick="changeBarcodeColor('#2d6a4f')" class="color-btn" style="background:#2d6a4f; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
+                    <button onclick="changeBarcodeColor('#1a237e')" class="color-btn" style="background:#1a237e; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
+                    <button onclick="changeBarcodeColor('#b71c1c')" class="color-btn" style="background:#b71c1c; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
+                    <button onclick="changeBarcodeColor('#e65100')" class="color-btn" style="background:#e65100; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
+                    <button onclick="changeBarcodeColor('#4a148c')" class="color-btn" style="background:#4a148c; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
+                    <button onclick="changeBarcodeColor('#ffffff')" class="color-btn" style="background:#ffffff; width:40px; height:40px; border-radius:50%; border:2px solid #333; color:#333;">⬜</button>
+                </div>
+
                 <div style="text-align:center; padding:20px; background:white; border-radius:20px; border:2px solid #dae2ec;">
-                    <canvas id="barcodeCanvas" style="max-width:100%; margin:0 auto;"></canvas>
-                    <p id="barcodeNumber" style="font-size:0.9rem; font-family:monospace; color:#1a1a2e; margin-top:8px; letter-spacing:2px;"></p>
+                    <canvas id="barcodeCanvas" style="max-width:100%; margin:0 auto; background:#ffffff; border-radius:8px;"></canvas>
+                    <p id="barcodeNumber" style="font-size:1rem; font-family:monospace; color:#1a1a2e; margin-top:10px; letter-spacing:3px; font-weight:bold;"></p>
                     <p style="font-size:0.8rem; color:#7a8a9e; margin-top:8px;">Покажите этот штрихкод кассиру в любом магазине</p>
                     <p style="font-size:0.7rem; color:#3e5f7e; margin-top:4px;">✅ Единая карта для всех магазинов</p>
+                    <div style="margin-top:12px;">
+                        <button onclick="downloadBarcode()" class="btn-success" style="font-size:0.85rem; padding:8px 20px;">💾 Скачать штрихкод</button>
+                    </div>
                 </div>
             </div>
 
