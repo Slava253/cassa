@@ -25,6 +25,7 @@
             <div class="card login-card">
                 <div class="card-title">🔐 Вход в систему</div>
                 
+                <!-- Овальные кнопки -->
                 <div class="role-selector-oval">
                     <div class="role-oval active" data-role="admin" onclick="selectRole('admin')">
                         <div class="role-icon">👑</div>
@@ -49,7 +50,7 @@
                         <label>🔒 Пароль</label>
                         <input type="password" id="adminPasswordInput" placeholder="Введите пароль">
                     </div>
-                    <button onclick="adminLogin()" class="btn-login">👑 Войти как Админ</button>
+                    <button onclick="adminLogin()" class="btn-login">👑 Войти</button>
                 </div>
 
                 <div id="cashierLogin" class="login-form" style="display:none;">
@@ -67,7 +68,7 @@
                         <label>🔒 Пароль</label>
                         <input type="password" id="cashierPasswordInput" placeholder="Введите пароль">
                     </div>
-                    <button onclick="cashierLogin()" class="btn-login">💳 Войти как Кассир</button>
+                    <button onclick="cashierLogin()" class="btn-login">💳 Войти</button>
                 </div>
 
                 <div id="clientLogin" class="login-form" style="display:none;">
@@ -81,7 +82,7 @@
                         <label>📱 Номер телефона</label>
                         <input type="tel" id="clientPhoneInput" placeholder="+7 900 123-45-67">
                     </div>
-                    <button onclick="clientLogin()" class="btn-login">👤 Войти как Клиент</button>
+                    <button onclick="clientLogin()" class="btn-login">👤 Войти</button>
                 </div>
             </div>
         </div>
