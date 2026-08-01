@@ -1,7 +1,5 @@
 // ===== АДМИНИСТРАТОР =====
 
-let cashierPhotoData = null;
-
 const user = checkAuth();
 if (!user || user.role !== 'admin') {
     window.location.href = 'index.html';
@@ -29,7 +27,6 @@ function loadCashiers() {
             html += `
                 <div class="member-item">
                     <div class="member-info">
-                        ${c.photoUrl ? `<img src="${c.photoUrl}" class="member-photo">` : '<div style="width:54px;height:54px;background:#d9e2ed;border-radius:50%;display:flex;align-items:center;justify-content:center;">📷</div>'}
                         <div>
                             <strong>${c.fullName}</strong><br>
                             <span class="badge">🔑 ${c.login}</span><br>
@@ -49,36 +46,22 @@ function addCashier() {
     const login = document.getElementById('cashierLogin').value.trim();
     const password = document.getElementById('cashierPassword').value.trim();
     
-    if (!fullName) {
-        showToast('❌ Введите ФИО кассира', true);
-        document.getElementById('cashierFullName').focus();
-        return;
-    }
-    if (!login) {
-        showToast('❌ Введите логин кассира', true);
-        document.getElementById('cashierLogin').focus();
-        return;
-    }
-    if (!password) {
-        showToast('❌ Введите пароль кассира', true);
-        document.getElementById('cashierPassword').focus();
+    if (!fullName || !login || !password) {
+        showToast('❌ Заполните все поля!', true);
         return;
     }
     
     db.ref('cashiers').orderByChild('login').equalTo(login).once('value', snap => {
         if (snap.exists()) {
             showToast('❌ Логин уже занят!', true);
-            document.getElementById('cashierLogin').focus();
             return;
         }
         
-        const data = { fullName, login, password, photoUrl: cashierPhotoData || '' };
+        const data = { fullName, login, password };
         db.ref('cashiers').push(data).then(() => {
             document.getElementById('cashierFullName').value = '';
             document.getElementById('cashierLogin').value = '';
             document.getElementById('cashierPassword').value = '';
-            document.getElementById('cashierPhotoPreview').innerHTML = '';
-            cashierPhotoData = null;
             showToast(`✅ Кассир ${fullName} добавлен!`);
         }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
     });
@@ -116,45 +99,12 @@ function loadClients() {
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                         <span class="badge">⭐ ${c.balance || 0} баллов</span>
-                        <button class="small-btn" onclick="viewClientHistory('${key}')">📜 История</button>
                         <button class="small-btn danger" onclick="removeClient('${key}')">🗑</button>
                     </div>
                 </div>
             `;
         }
         container.innerHTML = html;
-    });
-}
-
-function createClientCard() {
-    const fullName = document.getElementById('clientFullName').value.trim();
-    const phone = document.getElementById('clientPhone').value.trim();
-    
-    if (!fullName) {
-        showToast('❌ Введите ФИО клиента', true);
-        document.getElementById('clientFullName').focus();
-        return;
-    }
-    if (!phone) {
-        showToast('❌ Введите телефон клиента', true);
-        document.getElementById('clientPhone').focus();
-        return;
-    }
-    
-    db.ref('clients').orderByChild('phone').equalTo(phone).once('value', snap => {
-        if (snap.exists()) {
-            showToast('❌ Клиент с таким телефоном уже существует', true);
-            document.getElementById('clientPhone').focus();
-            return;
-        }
-        
-        const cardNumber = '29' + Math.floor(Math.random() * 10000000000).toString().padStart(10, '0');
-        const data = { fullName, phone, cardNumber, balance: 0, history: [] };
-        db.ref('clients').push(data).then(() => {
-            document.getElementById('clientFullName').value = '';
-            document.getElementById('clientPhone').value = '';
-            showToast(`✅ Карта создана! Номер: ${cardNumber}`);
-        }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
     });
 }
 
@@ -165,55 +115,12 @@ function removeClient(id) {
     });
 }
 
-function viewClientHistory(id) {
-    db.ref('clients/' + id + '/history').once('value', snap => {
-        const history = snap.val() || [];
-        db.ref('clients/' + id).once('value', snap2 => {
-            const data = snap2.val();
-            let html = `
-                <div class="modal" onclick="this.style.display='none'">
-                    <div class="modal-card" onclick="event.stopPropagation()">
-                        <h3 style="margin-bottom:16px;">📜 История: ${data.fullName}</h3>
-            `;
-            if (history.length === 0) {
-                html += '<div class="empty-state">Нет покупок</div>';
-            } else {
-                history.slice().reverse().forEach(item => {
-                    html += `
-                        <div class="history-item">
-                            <div><span style="font-size:0.7rem;color:#7a8a9e;">${item.date}</span></div>
-                            <div>${item.total} ₽ <span class="badge">+${item.points} баллов</span></div>
-                        </div>
-                    `;
-                });
-            }
-            html += `<button onclick="this.closest('.modal').style.display='none'" style="margin-top:16px;">Закрыть</button>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', html);
-        });
-    });
-}
-
-// ===== ФОТО =====
-function onCashierPhoto(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            cashierPhotoData = e.target.result;
-            document.getElementById('cashierPhotoPreview').innerHTML = `
-                <img src="${e.target.result}" class="photo-preview">
-                <button class="small-btn danger" onclick="clearCashierPhoto()">Очистить</button>
-            `;
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-function clearCashierPhoto() {
-    cashierPhotoData = null;
-    document.getElementById('cashierPhotoPreview').innerHTML = '';
-    document.getElementById('cashierPhoto').value = '';
+function showToast(msg, isError = false) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    toast.style.background = isError ? '#b33a34' : '#1d6f2c';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.style.display = 'none', 3000);
 }
