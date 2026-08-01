@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <meta name="theme-color" content="#0b1e3a">
+    <meta name="theme-color" content="#1a1a2e">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="img/icon-192.png">
-    <title>ГУ СВС | Вход</title>
+    <title>Магазин | Вход</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/mobile.css">
 </head>
 <body>
     <div class="app-container">
-        <div class="header">
+        <div class="header" style="background: linear-gradient(145deg, #1a1a2e, #16213e);">
             <div class="logo-area">
-                <h1>🏪 ГУ СВС</h1>
-                <p>Государственные услуги • Касса • Бонусы</p>
+                <h1>🏪 Магазин</h1>
+                <p>Касса • Бонусы • Карты</p>
             </div>
         </div>
 
@@ -35,25 +35,25 @@
                 <div id="adminLogin" class="login-form">
                     <div class="form-group">
                         <label>👤 Логин</label>
-                        <input type="text" id="adminLoginInput" placeholder="Введите логин" value="2347">
+                        <input type="text" id="adminLoginInput" placeholder="Введите логин">
                     </div>
                     <div class="form-group">
                         <label>🔒 Пароль</label>
-                        <input type="password" id="adminPasswordInput" placeholder="Введите пароль" value="2203">
+                        <input type="password" id="adminPasswordInput" placeholder="Введите пароль">
                     </div>
-                    <button onclick="adminLogin()" style="width:100%;">👑 Войти как Админ</button>
+                    <button onclick="adminLogin()" style="width:100%;">👑 Войти</button>
                 </div>
 
                 <div id="cashierLogin" class="login-form" style="display:none;">
                     <div class="form-group">
-                        <label>👤 Логин кассира</label>
+                        <label>👤 Логин</label>
                         <input type="text" id="cashierLoginInput" placeholder="Введите логин">
                     </div>
                     <div class="form-group">
                         <label>🔒 Пароль</label>
                         <input type="password" id="cashierPasswordInput" placeholder="Введите пароль">
                     </div>
-                    <button onclick="cashierLogin()" style="width:100%;">💳 Войти как Кассир</button>
+                    <button onclick="cashierLogin()" style="width:100%;">💳 Войти</button>
                 </div>
 
                 <div id="clientLogin" class="login-form" style="display:none;">
@@ -61,11 +61,11 @@
                         <label>📱 Номер телефона</label>
                         <input type="tel" id="clientPhoneInput" placeholder="+7 900 123-45-67">
                     </div>
-                    <button onclick="clientLogin()" style="width:100%;">👤 Войти как Клиент</button>
+                    <button onclick="clientLogin()" style="width:100%;">👤 Войти</button>
                 </div>
 
                 <div style="margin-top:16px;font-size:0.75rem;color:#7a8a9e;text-align:center;">
-                    <i class="fas fa-info-circle"></i> Админ: логин 2347 / пароль 2203
+                    <i class="fas fa-info-circle"></i> Админ по умолчанию: admin / admin123
                 </div>
             </div>
         </div>
@@ -88,25 +88,15 @@
             document.getElementById('clientLogin').style.display = role === 'client' ? 'block' : 'none';
         }
 
-        // Показать toast
-        function showToast(msg, isError = false) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.style.display = 'block';
-            toast.style.background = isError ? '#b33a34' : '#1d6f2c';
-            clearTimeout(toast._timer);
-            toast._timer = setTimeout(() => toast.style.display = 'none', 3000);
-        }
-
         // Проверка сохраненной сессии
-        const saved = localStorage.getItem('gusc_user');
+        const saved = localStorage.getItem('shop_user');
         if (saved) {
             try {
                 const user = JSON.parse(saved);
                 if (user.role === 'admin') window.location.href = 'admin.html';
                 else if (user.role === 'cashier') window.location.href = 'cashier.html';
                 else if (user.role === 'client') window.location.href = 'client.html';
-            } catch(e) { localStorage.removeItem('gusc_user'); }
+            } catch(e) { localStorage.removeItem('shop_user'); }
         }
     </script>
 </body>
