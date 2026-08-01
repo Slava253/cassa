@@ -26,7 +26,7 @@
         </div>
 
         <div class="main-content">
-            <!-- Создание карты клиента (для кассира) -->
+            <!-- Создание карты клиента -->
             <div class="card">
                 <div class="card-title">🎫 Создать карту клиента</div>
                 <div class="grid-2col">
@@ -44,9 +44,37 @@
                 <button onclick="cashierCreateClient()" class="btn-success" style="width:100%;">🎫 Создать карту</button>
             </div>
 
-            <!-- Сканирование карты -->
+            <!-- Добавление товара в систему -->
+            <div class="card" style="border: 2px solid #f6b83d;">
+                <div class="card-title">📦 Добавить товар в систему</div>
+                <div class="grid-2col">
+                    <div>
+                        <div class="form-group">
+                            <label>🔲 Штрихкод (сканируйте с упаковки)</label>
+                            <input type="text" id="productBarcode" placeholder="4601234567890" style="font-size:1.2rem; font-family:monospace;">
+                        </div>
+                        <div class="form-group">
+                            <label>📝 Название товара</label>
+                            <input type="text" id="productName" placeholder="Молоко 'Деревенское' 1л">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>💰 Обычная цена (₽)</label>
+                            <input type="number" id="productPrice" step="0.01" placeholder="89.90">
+                        </div>
+                        <div class="form-group">
+                            <label>💎 Цена со скидочной картой (₽)</label>
+                            <input type="number" id="productDiscountPrice" step="0.01" placeholder="79.90">
+                        </div>
+                    </div>
+                </div>
+                <button onclick="addProductToSystem()" class="btn-success" style="width:100%;">➕ Добавить товар в базу</button>
+            </div>
+
+            <!-- Сканирование клиента -->
             <div class="card">
-                <div class="card-title">🔍 Найти клиента</div>
+                <div class="card-title">🎫 Найти клиента</div>
                 <div style="display:flex; gap:12px; flex-wrap:wrap;">
                     <div class="form-group" style="flex:2; min-width:200px;">
                         <label>Номер карты или телефон</label>
@@ -57,23 +85,19 @@
                 <div id="scannedClient" style="display:none;" class="member-item" style="margin-top:12px;"></div>
             </div>
 
-            <!-- Добавление товаров -->
+            <!-- Сканирование товара в корзину -->
             <div class="card">
-                <div class="card-title">📦 Добавить товар</div>
+                <div class="card-title">🛒 Сканировать товар в корзину</div>
                 <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                    <div class="form-group" style="flex:2; min-width:150px;">
-                        <label>Штрихкод</label>
-                        <input type="text" id="productBarcode" placeholder="Введите штрихкод">
+                    <div class="form-group" style="flex:2; min-width:200px;">
+                        <label>🔲 Отсканируйте штрихкод товара</label>
+                        <input type="text" id="cartBarcodeInput" placeholder="4601234567890" style="font-size:1.2rem; font-family:monospace;">
                     </div>
-                    <div class="form-group" style="flex:1; min-width:100px;">
+                    <div class="form-group" style="flex:1; min-width:80px;">
                         <label>Кол-во</label>
-                        <input type="number" id="productQuantity" value="1" min="1">
+                        <input type="number" id="cartQuantity" value="1" min="1">
                     </div>
-                    <div class="form-group" style="flex:1; min-width:120px;">
-                        <label>Цена (₽)</label>
-                        <input type="number" id="productPrice" step="0.01" placeholder="0.00">
-                    </div>
-                    <button onclick="addProduct()" style="align-self:flex-end;">➕ Добавить</button>
+                    <button onclick="addToCart()" style="align-self:flex-end;">➕ Добавить в корзину</button>
                 </div>
             </div>
 
@@ -84,9 +108,27 @@
                     <div><span class="badge">Сумма: <strong id="cartTotal">0.00</strong> ₽</span></div>
                 </div>
                 <div id="cartList"><div class="empty-state">Корзина пуста</div></div>
-                <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap;">
-                    <button onclick="processPayment()" class="btn-success" style="flex:1;">💵 Оплатить</button>
-                    <button onclick="clearCart()" class="small-btn danger" style="flex:1;">🗑 Очистить</button>
+                
+                <!-- Выбор способа оплаты -->
+                <div style="margin-top:16px; padding-top:16px; border-top:2px solid #eef2f8;">
+                    <label style="font-weight:600; margin-bottom:10px; display:block;">💳 Способ оплаты:</label>
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+                        <button onclick="selectPayment('cash')" id="payCash" class="payment-btn" style="flex:1; background:#eef2f8; color:#1a1a2e;">💵 Наличные</button>
+                        <button onclick="selectPayment('card')" id="payCard" class="payment-btn" style="flex:1; background:#eef2f8; color:#1a1a2e;">💳 Карта</button>
+                    </div>
+                    <div id="cashInputArea" style="display:none;">
+                        <div class="form-group">
+                            <label>💰 Сумма от покупателя:</label>
+                            <input type="number" id="cashGiven" step="0.01" placeholder="Введите сумму" style="font-size:1.1rem;">
+                        </div>
+                        <div id="changeDisplay" style="display:none; background:#f0f9f0; padding:12px; border-radius:16px; margin-bottom:12px;">
+                            <strong>💵 Сдача: <span id="changeAmount" style="color:#1d6f2c; font-size:1.3rem;">0.00 ₽</span></strong>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                        <button onclick="processPayment()" class="btn-success" style="flex:2;">💵 Оплатить</button>
+                        <button onclick="clearCart()" class="small-btn danger" style="flex:1;">🗑 Очистить</button>
+                    </div>
                 </div>
             </div>
 
