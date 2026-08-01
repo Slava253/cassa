@@ -20,9 +20,8 @@ body {
     overflow: hidden;
 }
 
-/* ===== HEADER ===== */
 .header {
-    background: linear-gradient(145deg, #0b1e3a, #1a3359);
+    background: linear-gradient(145deg, #1a1a2e, #16213e);
     color: white;
     padding: 16px 32px;
     display: flex;
@@ -76,7 +75,6 @@ body {
     background: rgba(255,255,255,0.25);
 }
 
-/* ===== MAIN ===== */
 .main-content {
     padding: 28px 32px;
 }
@@ -93,7 +91,7 @@ body {
 .card-title {
     font-size: 1.4rem;
     font-weight: 650;
-    color: #0b1e3a;
+    color: #1a1a2e;
     border-left: 6px solid #f6b83d;
     padding-left: 18px;
     margin-bottom: 20px;
@@ -104,7 +102,7 @@ body {
 
 .badge {
     background: #eef4ff;
-    color: #1a3359;
+    color: #1a1a2e;
     border-radius: 40px;
     padding: 4px 16px;
     font-size: 0.7rem;
@@ -143,12 +141,12 @@ input, select, textarea {
 
 input:focus, select:focus, textarea:focus {
     outline: none;
-    border-color: #1a3359;
-    box-shadow: 0 0 0 4px rgba(26,51,89,0.08);
+    border-color: #1a1a2e;
+    box-shadow: 0 0 0 4px rgba(26,26,46,0.08);
 }
 
 button {
-    background: #1a3359;
+    background: #1a1a2e;
     color: white;
     border: none;
     padding: 11px 24px;
@@ -160,9 +158,9 @@ button {
 }
 
 button:hover:not(:disabled) {
-    background: #0e2442;
+    background: #0e0e1e;
     transform: scale(0.97);
-    box-shadow: 0 6px 16px rgba(26,51,89,0.25);
+    box-shadow: 0 6px 16px rgba(26,26,46,0.25);
 }
 
 button:disabled {
@@ -181,7 +179,7 @@ button:disabled {
     padding: 5px 14px;
     font-size: 0.72rem;
     background: #e6edf6;
-    color: #1a3359;
+    color: #1a1a2e;
     border-radius: 40px;
     cursor: pointer;
     border: none;
@@ -197,7 +195,6 @@ button:disabled {
     opacity: 0.8;
 }
 
-/* ===== COMPONENTS ===== */
 .flex-between {
     display: flex;
     justify-content: space-between;
@@ -244,29 +241,6 @@ button:disabled {
     border: 1px solid #dae2ec;
 }
 
-.document-img {
-    max-width: 100%;
-    max-height: 250px;
-    border-radius: 18px;
-    margin-top: 10px;
-    border: 1px solid #e2eaf2;
-    cursor: pointer;
-    transition: 0.15s;
-}
-
-.document-img:hover {
-    opacity: 0.9;
-}
-
-.document-card {
-    background: white;
-    border-radius: 22px;
-    padding: 16px 20px;
-    margin-bottom: 14px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-    border: 1px solid #eef2f8;
-}
-
 .empty-state {
     text-align: center;
     padding: 30px;
@@ -302,47 +276,6 @@ button:disabled {
     100% { opacity: 0; transform: translateY(24px); visibility: hidden; }
 }
 
-/* ===== MODAL ===== */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(6px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    cursor: pointer;
-}
-
-.modal-content {
-    max-width: 92%;
-    max-height: 92%;
-}
-
-.modal-content img {
-    max-width: 100%;
-    max-height: 90vh;
-    border-radius: 20px;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
-}
-
-.modal-card {
-    background: white;
-    border-radius: 32px;
-    padding: 28px;
-    max-width: 520px;
-    width: 92%;
-}
-
-.hidden-file {
-    display: none;
-}
-
-/* ===== ROLE SELECTOR ===== */
 .role-selector {
     display: flex;
     gap: 12px;
@@ -364,16 +297,15 @@ button:disabled {
 }
 
 .role-btn.active {
-    border-color: #1a3359;
-    background: #1a3359;
+    border-color: #1a1a2e;
+    background: #1a1a2e;
     color: white;
 }
 
 .role-btn:hover:not(.active) {
-    border-color: #1a3359;
+    border-color: #1a1a2e;
 }
 
-/* ===== QR ===== */
 .qr-container {
     text-align: center;
     padding: 20px;
@@ -382,7 +314,6 @@ button:disabled {
     border: 2px dashed #dae2ec;
 }
 
-/* ===== HISTORY ===== */
 .history-item {
     background: #f8faff;
     border-radius: 16px;
