@@ -1,36 +1,18 @@
-/* Mobile First - оптимизация для телефонов */
+/* ===== МОБИЛЬНАЯ ВЕРСИЯ ===== */
 @media (max-width: 768px) {
-    body { padding: 10px; }
-    .app-container { border-radius: 24px; }
-    .header { padding: 12px 16px; flex-direction: column; text-align: center; }
-    .logo-area h1 { font-size: 1.4rem; }
-    .user-status { font-size: 0.8rem; padding: 6px 14px; width: 100%; justify-content: center; }
-    .main-content { padding: 12px 14px; }
-    .card { padding: 14px 16px; border-radius: 20px; }
-    .card-title { font-size: 1.1rem; padding-left: 12px; }
-    .grid-2col { grid-template-columns: 1fr; gap: 12px; }
-    .role-selector { gap: 8px; }
-    .role-btn { padding: 10px 16px; font-size: 0.85rem; min-width: 80px; }
-    input, select, textarea { padding: 9px 12px; font-size: 0.85rem; border-radius: 14px; }
-    button { padding: 9px 16px; font-size: 0.82rem; }
-    .member-item { padding: 10px 14px; flex-direction: column; align-items: stretch; }
-    .member-info { gap: 10px; }
-    .member-photo { width: 44px; height: 44px; }
-    .flex-between { flex-direction: column; align-items: stretch; }
-    .success-toast { bottom: 16px; right: 16px; left: 16px; font-size: 0.85rem; padding: 12px 20px; text-align: center; border-radius: 40px; }
-    .qr-container canvas { max-width: 150px !important; }
-    .history-item { flex-direction: column; align-items: stretch; gap: 6px; }
+    .color-btn {
+        width: 34px;
+        height: 34px;
+    }
+    
+    #barcodeCanvas {
+        max-width: 100%;
+    }
 }
 
-@media (max-width: 400px) {
-    .header .logo-area h1 { font-size: 1.2rem; }
-    .card-title { font-size: 1rem; }
-    .badge { font-size: 0.6rem; padding: 3px 10px; }
-    .role-btn { padding: 8px 12px; font-size: 0.75rem; min-width: 60px; }
-    .small-btn { padding: 4px 10px; font-size: 0.65rem; }
-}
-
-@media (pointer: coarse) {
-    button, .role-btn, .small-btn, .member-item { min-height: 44px; }
-    input, select { min-height: 44px; }
+@media (max-width: 480px) {
+    .color-btn {
+        width: 28px;
+        height: 28px;
+    }
 }
