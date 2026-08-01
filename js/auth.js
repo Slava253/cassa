@@ -70,19 +70,23 @@ function clientLogin() {
         return;
     }
     
+    // Ищем клиента по телефону в любом магазине
     db.ref('clients').orderByChild('phone').equalTo(phone).once('value', snap => {
         const clients = snap.val();
         let found = null;
         let foundKey = null;
+        
         for (let key in clients) {
             const c = clients[key];
-            if (c.phone === phone && c.storeId === storeId) {
+            if (c.phone === phone) {
                 found = c;
                 foundKey = key;
                 break;
             }
         }
+        
         if (found) {
+            // Клиент найден
             db.ref('stores/' + storeId).once('value', snap2 => {
                 const store = snap2.val();
                 const user = { 
@@ -96,7 +100,41 @@ function clientLogin() {
                 window.location.href = 'client.html';
             });
         } else {
-            showToast('❌ Клиент с таким номером не найден в этом магазине', true);
+            // Клиент не найден - СОЗДАЁМ НОВУЮ КАРТУ АВТОМАТИЧЕСКИ
+            showToast('🔄 Создаём новую карту...');
+            
+            // Генерируем уникальный номер карты на основе телефона
+            const phoneClean = phone.replace(/\D/g, '');
+            const cardNumber = '29' + phoneClean.padStart(10, '0').substring(0, 10);
+            
+            const newClient = {
+                fullName: 'Клиент ' + phone,
+                phone: phone,
+                cardNumber: cardNumber,
+                balance: 0,
+                history: [],
+                createdAt: new Date().toISOString()
+            };
+            
+            db.ref('clients').push(newClient).then(ref => {
+                const newKey = ref.key;
+                showToast('✅ Карта создана! Штрихкод: ' + cardNumber);
+                
+                db.ref('stores/' + storeId).once('value', snap2 => {
+                    const store = snap2.val();
+                    const user = { 
+                        ...newClient, 
+                        id: newKey,
+                        role: 'client', 
+                        storeId: storeId,
+                        storeName: store ? store.name : 'Неизвестный магазин'
+                    };
+                    localStorage.setItem('shop_user', JSON.stringify(user));
+                    window.location.href = 'client.html';
+                });
+            }).catch(err => {
+                showToast('❌ Ошибка создания карты: ' + err.message, true);
+            });
         }
     });
 }
