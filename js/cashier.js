@@ -57,7 +57,6 @@ function updateWeightProducts() {
         select.appendChild(option);
     });
     
-    // Обновляем цену
     updateWeightPrice();
 }
 
@@ -105,7 +104,7 @@ function addWeightProduct() {
     updateCartUI();
 }
 
-// ===== ПОИСК КЛИЕНТА (по номеру карты, телефону или никнейму) =====
+// ===== ПОИСК КЛИЕНТА =====
 function scanClient() {
     const input = document.getElementById('clientScanInput').value.trim();
     if (!input) {
@@ -122,7 +121,6 @@ function scanClient() {
         
         for (let key in clients) {
             const c = clients[key];
-            // Поиск по карте, телефону или никнейму
             if (c.cardNumber === cleanInput || 
                 c.phone === input || 
                 c.phone === cleanInput ||
@@ -175,11 +173,9 @@ function updateCartPricesWithDiscount() {
     
     for (let item of currentCart) {
         if (item.isWeight) {
-            // Весовые товары: скидка 10%
             const basePrice = weightPrices[item.originalName] || item.price;
             item.price = basePrice * 0.9;
         } else {
-            // Товары со штрихкодом
             db.ref('stores/' + storeId + '/products').orderByChild('barcode').equalTo(item.barcode).once('value', snap => {
                 let product = null;
                 snap.forEach(child => {
@@ -320,7 +316,7 @@ function clearCart() {
     showToast('🗑 Корзина очищена');
 }
 
-// ===== ОСТАЛЬНЫЕ ФУНКЦИИ (ОПЛАТА, ИСТОРИЯ, ТОСТ) =====
+// ===== ОСТАЛЬНЫЕ ФУНКЦИИ =====
 function selectPayment(method) {
     selectedPayment = method;
     document.querySelectorAll('.payment-btn').forEach(b => b.style.background = '#eef2f8');
@@ -417,6 +413,8 @@ async function processPayment() {
         showToast(`💳 Оплачено картой: ${total.toFixed(2)} ₽`);
     }
     
+    const displayName = currentClient ? (currentClient.nickname || currentClient.fullName) : 'Без карты';
+    
     const purchase = {
         date: new Date().toLocaleString('ru-RU'),
         total: total,
@@ -434,7 +432,10 @@ async function processPayment() {
         storeName: storeName,
         paymentMethod: selectedPayment === 'cash' ? 'Наличные' : 'Карта',
         cashGiven: selectedPayment === 'cash' ? cashGiven : null,
-        change: selectedPayment === 'cash' ? change : null
+        change: selectedPayment === 'cash' ? change : null,
+        clientName: displayName,
+        clientId: currentClient ? currentClient.id : null,
+        clientPhone: currentClient ? currentClient.phone : null
     };
     
     try {
@@ -453,7 +454,9 @@ async function processPayment() {
         
         const cashierPurchase = {
             ...purchase,
-            clientName: currentClient ? (currentClient.nickname || currentClient.fullName) : 'Без карты'
+            clientName: displayName,
+            clientId: currentClient ? currentClient.id : null,
+            clientPhone: currentClient ? currentClient.phone : null
         };
         await db.ref('cashier_history').push(cashierPurchase);
         await db.ref('stores/' + storeId + '/history').push(cashierPurchase);
@@ -503,6 +506,7 @@ function loadCashierHistory() {
                 <div class="history-item">
                     <div>
                         <strong>${item.clientName || 'Без карты'}</strong>
+                        ${item.clientPhone ? `<span style="font-size:0.6rem; color:#7a8a9e; display:block;">📱 ${item.clientPhone}</span>` : ''}
                         <span style="font-size:0.7rem; color:#7a8a9e; display:block;">${item.date}</span>
                         <span style="font-size:0.7rem; color:#3e5f7e;">${item.paymentMethod || 'Не указан'}</span>
                         ${item.discount > 0 ? `<span style="font-size:0.7rem; color:#1d6f2c;">Скидка: ${item.discount} ₽</span>` : ''}
@@ -530,7 +534,6 @@ function showToast(msg, isError = false) {
     toast._timer = setTimeout(() => toast.style.display = 'none', 3000);
 }
 
-// Инициализация весовых товаров
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('weightProduct').addEventListener('change', updateWeightPrice);
 });
