@@ -31,8 +31,8 @@
                 <div class="card-title">🎫 Найти клиента</div>
                 <div style="display:flex; gap:12px; flex-wrap:wrap;">
                     <div class="form-group" style="flex:2; min-width:200px;">
-                        <label>Номер карты или телефон</label>
-                        <input type="text" id="clientScanInput" placeholder="29XXXXXXXXXX или +7 900 123-45-67">
+                        <label>Номер карты, телефон или никнейм</label>
+                        <input type="text" id="clientScanInput" placeholder="29XXXXXXXXXX, телефон или никнейм">
                     </div>
                     <button onclick="scanClient()" style="align-self:flex-end;">🔍 Найти</button>
                 </div>
@@ -54,40 +54,44 @@
                 <div id="discountInfo" style="margin-top:8px; font-weight:bold; color:#1d6f2c;"></div>
             </div>
 
-            <!-- Добавление товара -->
+            <!-- ВЕСОВЫЕ ТОВАРЫ -->
             <div class="card" style="border: 2px solid #f6b83d;">
-                <div class="card-title">📦 Добавить товар</div>
-                <div class="grid-2col">
-                    <div>
-                        <div class="form-group">
-                            <label>🔲 Штрихкод</label>
-                            <input type="text" id="productBarcode" placeholder="4601234567890" style="font-size:1.2rem; font-family:monospace;">
-                        </div>
-                        <div class="form-group">
-                            <label>📝 Название</label>
-                            <input type="text" id="productName" placeholder="Молоко 'Деревенское' 1л">
-                        </div>
+                <div class="card-title">⚖️ Весовые товары (без штрихкода)</div>
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                    <div class="form-group" style="flex:1; min-width:150px;">
+                        <label>Категория</label>
+                        <select id="weightCategory" onchange="updateWeightProducts()">
+                            <option value="Выпечка">🥖 Выпечка</option>
+                            <option value="Морепродукты">🦐 Морепродукты</option>
+                            <option value="Овощи">🥕 Овощи</option>
+                            <option value="Фрукты">🍎 Фрукты</option>
+                        </select>
                     </div>
-                    <div>
-                        <div class="form-group">
-                            <label>💰 Обычная цена (₽)</label>
-                            <input type="number" id="productPrice" step="0.01" placeholder="89.90">
-                        </div>
-                        <div class="form-group">
-                            <label>💎 Цена со скидкой (₽)</label>
-                            <input type="number" id="productDiscountPrice" step="0.01" placeholder="79.90">
-                        </div>
+                    <div class="form-group" style="flex:2; min-width:180px;">
+                        <label>Товар</label>
+                        <select id="weightProduct"></select>
                     </div>
+                    <div class="form-group" style="flex:1; min-width:100px;">
+                        <label>Вес / Количество</label>
+                        <input type="number" id="weightQuantity" value="1" step="0.1" min="0.1">
+                    </div>
+                    <div class="form-group" style="flex:1; min-width:80px;">
+                        <label>Цена за кг/шт</label>
+                        <input type="number" id="weightPrice" step="0.01" placeholder="0.00">
+                    </div>
+                    <button onclick="addWeightProduct()" style="align-self:flex-end;">➕ Добавить</button>
                 </div>
-                <button onclick="addProductToSystem()" class="btn-success" style="width:100%;">➕ Добавить</button>
+                <div style="margin-top:8px; font-size:0.8rem; color:#7a8a9e;">
+                    💡 Выпечка добавляется в <strong>штуках</strong>, остальные в <strong>килограммах</strong>
+                </div>
             </div>
 
-            <!-- Сканирование товара -->
-            <div class="card">
-                <div class="card-title">🛒 Сканировать товар</div>
+            <!-- Добавление товара со штрихкодом -->
+            <div class="card" style="border: 2px solid #d4a13e;">
+                <div class="card-title">📦 Товар со штрихкодом</div>
                 <div style="display:flex; gap:12px; flex-wrap:wrap;">
                     <div class="form-group" style="flex:2; min-width:200px;">
-                        <label>🔲 Штрихкод товара</label>
+                        <label>🔲 Штрихкод</label>
                         <input type="text" id="cartBarcodeInput" placeholder="4601234567890" style="font-size:1.2rem; font-family:monospace;">
                     </div>
                     <div class="form-group" style="flex:1; min-width:80px;">
@@ -95,6 +99,9 @@
                         <input type="number" id="cartQuantity" value="1" min="1">
                     </div>
                     <button onclick="addToCart()" style="align-self:flex-end;">➕ Добавить</button>
+                </div>
+                <div style="margin-top:8px; font-size:0.8rem; color:#7a8a9e;">
+                    💡 Для добавления весовых товаров используйте секцию выше
                 </div>
             </div>
 
