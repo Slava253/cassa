@@ -9,7 +9,7 @@ let currentBarcodeColor = '#000000';
 
 document.addEventListener('DOMContentLoaded', function() {
     // Информация о клиенте
-    document.getElementById('clientName').innerHTML = `👤 ${user.fullName}`;
+    document.getElementById('clientName').innerHTML = `👤 ${user.nickname || user.fullName}`;
     document.getElementById('clientStoreDisplay').innerHTML = `🏪 ${user.storeName || 'Магазин'}`;
     document.getElementById('clientBalance').innerText = user.balance || 0;
     
@@ -18,16 +18,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('profileNickname').value = user.nickname || '';
     document.getElementById('profileCardNumber').value = user.cardNumber || '';
     
-    document.getElementById('clientInfo').innerHTML = `
-        <div>
-            <h3>${user.nickname || user.fullName}</h3>
-            <span class="badge">🎫 Карта: ${user.cardNumber}</span><br>
-            <span style="font-size:0.8rem;">📱 ${user.phone}</span><br>
-            <span style="font-size:0.8rem;color:#3e5f7e;">✅ Единая карта для всех магазинов</span>
-        </div>
-    `;
+    // Обновляем информацию в карточке
+    updateClientInfo();
     
+    // Генерируем штрихкод
     generateEAN13(user.cardNumber);
+    
+    // Загружаем историю
     loadClientHistory();
     
     // Показываем статус никнейма
@@ -36,6 +33,21 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('nicknameStatus').style.color = '#1d6f2c';
     }
 });
+
+// ===== ОБНОВЛЕНИЕ ИНФОРМАЦИИ О КЛИЕНТЕ =====
+function updateClientInfo() {
+    const displayName = user.nickname || user.fullName;
+    document.getElementById('clientInfo').innerHTML = `
+        <div>
+            <h3>${displayName}</h3>
+            ${user.nickname ? `<span style="font-size:0.8rem; color:#7a8a9e;">(${user.fullName})</span><br>` : ''}
+            <span class="badge">🎫 Карта: ${user.cardNumber}</span><br>
+            <span style="font-size:0.8rem;">📱 ${user.phone}</span><br>
+            <span style="font-size:0.8rem;color:#3e5f7e;">✅ Единая карта для всех магазинов</span>
+        </div>
+    `;
+    document.getElementById('clientName').innerHTML = `👤 ${displayName}`;
+}
 
 // ===== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК КЛИЕНТА =====
 function switchClientTab(tab) {
@@ -55,6 +67,8 @@ function saveNickname() {
     }
     
     const clientId = user.id;
+    const oldNickname = user.nickname || user.fullName;
+    
     db.ref('clients/' + clientId).update({
         nickname: nickname
     }).then(() => {
@@ -63,21 +77,76 @@ function saveNickname() {
         localStorage.setItem('shop_user', JSON.stringify(user));
         
         // Обновляем отображение
-        document.getElementById('clientInfo').innerHTML = `
-            <div>
-                <h3>${nickname}</h3>
-                <span class="badge">🎫 Карта: ${user.cardNumber}</span><br>
-                <span style="font-size:0.8rem;">📱 ${user.phone}</span><br>
-                <span style="font-size:0.8rem;color:#3e5f7e;">✅ Единая карта для всех магазинов</span>
-            </div>
-        `;
-        document.getElementById('clientName').innerHTML = `👤 ${nickname}`;
+        updateClientInfo();
         document.getElementById('nicknameStatus').innerHTML = `✅ Никнейм сохранён: ${nickname}`;
         document.getElementById('nicknameStatus').style.color = '#1d6f2c';
+        
+        // ОБНОВЛЯЕМ ИСТОРИЮ КАССЫ - меняем старый никнейм на новый
+        updateCashierHistoryNickname(clientId, oldNickname, nickname);
         
         showToast(`✅ Никнейм "${nickname}" сохранён!`);
     }).catch(err => {
         showToast('❌ Ошибка: ' + err.message, true);
+    });
+}
+
+// ===== ОБНОВЛЕНИЕ НИКНЕЙМА В ИСТОРИИ КАССЫ =====
+function updateCashierHistoryNickname(clientId, oldNickname, newNickname) {
+    // Ищем клиента по ID в истории кассы
+    db.ref('cashier_history').once('value', snap => {
+        const history = snap.val();
+        if (!history) return;
+        
+        const updates = {};
+        let found = false;
+        
+        for (let key in history) {
+            const item = history[key];
+            // Проверяем, что запись принадлежит этому клиенту (по номеру телефона или по старому никнейму)
+            if (item.clientPhone === user.phone || item.clientName === oldNickname || 
+                (item.clientId && item.clientId === clientId)) {
+                // Обновляем имя клиента в истории
+                updates['cashier_history/' + key + '/clientName'] = newNickname;
+                // Добавляем ID клиента для связи, если его нет
+                if (!item.clientId) {
+                    updates['cashier_history/' + key + '/clientId'] = clientId;
+                }
+                if (!item.clientPhone) {
+                    updates['cashier_history/' + key + '/clientPhone'] = user.phone;
+                }
+                found = true;
+            }
+        }
+        
+        // Также обновляем в истории магазина
+        db.ref('stores/' + user.storeId + '/history').once('value', snap2 => {
+            const storeHistory = snap2.val();
+            if (!storeHistory) return;
+            
+            const storeUpdates = {};
+            for (let key in storeHistory) {
+                const item = storeHistory[key];
+                if (item.clientPhone === user.phone || item.clientName === oldNickname || 
+                    (item.clientId && item.clientId === clientId)) {
+                    storeUpdates['stores/' + user.storeId + '/history/' + key + '/clientName'] = newNickname;
+                    if (!item.clientId) {
+                        storeUpdates['stores/' + user.storeId + '/history/' + key + '/clientId'] = clientId;
+                    }
+                    if (!item.clientPhone) {
+                        storeUpdates['stores/' + user.storeId + '/history/' + key + '/clientPhone'] = user.phone;
+                    }
+                    found = true;
+                }
+            }
+            
+            // Применяем все обновления
+            const allUpdates = { ...updates, ...storeUpdates };
+            if (Object.keys(allUpdates).length > 0) {
+                db.ref().update(allUpdates).then(() => {
+                    console.log('✅ История обновлена с новым никнеймом:', newNickname);
+                }).catch(err => console.error('Ошибка обновления истории:', err));
+            }
+        });
     });
 }
 
@@ -133,6 +202,8 @@ function loadClientHistory() {
     container.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
     
     const clientId = user.id;
+    
+    // Слушаем изменения истории
     db.ref('clients/' + clientId + '/history').on('value', snap => {
         const history = snap.val() || [];
         if (history.length === 0) {
@@ -140,11 +211,15 @@ function loadClientHistory() {
             return;
         }
         let html = '';
-        history.slice().reverse().forEach(item => {
+        // Показываем последние 20 записей (сначала новые)
+        const reversed = history.slice().reverse();
+        const displayHistory = reversed.slice(0, 20);
+        
+        displayHistory.forEach(item => {
             html += `
                 <div class="history-item">
                     <div>
-                        <span style="font-size:0.7rem;color:#7a8a9e;">${item.date}</span>
+                        <span style="font-size:0.7rem;color:#7a8a9e;">${item.date || 'Дата неизвестна'}</span>
                         <div style="font-weight:500;">${item.items || 'Покупка'}</div>
                         <span style="font-size:0.6rem;color:#3e5f7e;">${item.paymentMethod || ''}</span>
                         <span style="font-size:0.6rem;color:#3e5f7e;">🏪 ${item.storeName || ''}</span>
@@ -152,21 +227,32 @@ function loadClientHistory() {
                         ${item.cashGiven ? `<span style="font-size:0.6rem;color:#3e5f7e;">💵 Сдача: ${item.change} ₽</span>` : ''}
                     </div>
                     <div style="text-align:right;">
-                        <strong>${item.total} ₽</strong>
+                        <strong>${item.total || 0} ₽</strong>
                         <span class="badge" style="display:block; margin-top:4px;">+${item.pointsEarned || 0} баллов</span>
                         ${item.pointsUsed > 0 ? `<span class="badge" style="display:block; background:#fee9e9; color:#b33a34;">-${item.pointsUsed} баллов</span>` : ''}
                     </div>
                 </div>
             `;
         });
+        
+        if (history.length > 20) {
+            html += `<div style="text-align:center; padding:12px; color:#7a8a9e; font-size:0.8rem;">Показаны последние 20 покупок из ${history.length}</div>`;
+        }
+        
         container.innerHTML = html;
+    }, error => {
+        console.error('Ошибка загрузки истории:', error);
+        container.innerHTML = '<div class="empty-state">❌ Ошибка загрузки истории</div>';
     });
     
+    // Слушаем изменения баланса
     db.ref('clients/' + clientId + '/balance').on('value', snap => {
         const balance = snap.val() || 0;
         document.getElementById('clientBalance').innerText = balance;
         const saved = JSON.parse(localStorage.getItem('shop_user'));
         saved.balance = balance;
         localStorage.setItem('shop_user', JSON.stringify(saved));
+    }, error => {
+        console.error('Ошибка загрузки баланса:', error);
     });
 }
