@@ -8,13 +8,19 @@ if (!user || user.role !== 'client') {
 let currentBarcodeColor = '#000000';
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Информация о клиенте
     document.getElementById('clientName').innerHTML = `👤 ${user.fullName}`;
     document.getElementById('clientStoreDisplay').innerHTML = `🏪 ${user.storeName || 'Магазин'}`;
     document.getElementById('clientBalance').innerText = user.balance || 0;
     
+    // Заполняем профиль
+    document.getElementById('profilePhone').value = user.phone || '';
+    document.getElementById('profileNickname').value = user.nickname || '';
+    document.getElementById('profileCardNumber').value = user.cardNumber || '';
+    
     document.getElementById('clientInfo').innerHTML = `
         <div>
-            <h3>${user.fullName}</h3>
+            <h3>${user.nickname || user.fullName}</h3>
             <span class="badge">🎫 Карта: ${user.cardNumber}</span><br>
             <span style="font-size:0.8rem;">📱 ${user.phone}</span><br>
             <span style="font-size:0.8rem;color:#3e5f7e;">✅ Единая карта для всех магазинов</span>
@@ -23,7 +29,57 @@ document.addEventListener('DOMContentLoaded', function() {
     
     generateEAN13(user.cardNumber);
     loadClientHistory();
+    
+    // Показываем статус никнейма
+    if (user.nickname) {
+        document.getElementById('nicknameStatus').innerHTML = `✅ Никнейм установлен: ${user.nickname}`;
+        document.getElementById('nicknameStatus').style.color = '#1d6f2c';
+    }
 });
+
+// ===== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК КЛИЕНТА =====
+function switchClientTab(tab) {
+    document.querySelectorAll('#client-profile, #client-card, #client-history').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tab-btn[data-tab^="client-"]').forEach(btn => btn.classList.remove('active'));
+    
+    document.getElementById('client-' + tab).style.display = 'block';
+    document.querySelector(`.tab-btn[data-tab="client-${tab}"]`).classList.add('active');
+}
+
+// ===== СОХРАНЕНИЕ НИКНЕЙМА =====
+function saveNickname() {
+    const nickname = document.getElementById('profileNickname').value.trim();
+    if (!nickname) {
+        showToast('❌ Введите никнейм', true);
+        return;
+    }
+    
+    const clientId = user.id;
+    db.ref('clients/' + clientId).update({
+        nickname: nickname
+    }).then(() => {
+        // Обновляем локальные данные
+        user.nickname = nickname;
+        localStorage.setItem('shop_user', JSON.stringify(user));
+        
+        // Обновляем отображение
+        document.getElementById('clientInfo').innerHTML = `
+            <div>
+                <h3>${nickname}</h3>
+                <span class="badge">🎫 Карта: ${user.cardNumber}</span><br>
+                <span style="font-size:0.8rem;">📱 ${user.phone}</span><br>
+                <span style="font-size:0.8rem;color:#3e5f7e;">✅ Единая карта для всех магазинов</span>
+            </div>
+        `;
+        document.getElementById('clientName').innerHTML = `👤 ${nickname}`;
+        document.getElementById('nicknameStatus').innerHTML = `✅ Никнейм сохранён: ${nickname}`;
+        document.getElementById('nicknameStatus').style.color = '#1d6f2c';
+        
+        showToast(`✅ Никнейм "${nickname}" сохранён!`);
+    }).catch(err => {
+        showToast('❌ Ошибка: ' + err.message, true);
+    });
+}
 
 // ===== ГЕНЕРАЦИЯ EAN-13 ШТРИХКОДА =====
 function generateEAN13(cardNumber, color) {
@@ -32,7 +88,6 @@ function generateEAN13(cardNumber, color) {
         if (!canvas) return;
         
         var fgColor = color || currentBarcodeColor || '#000000';
-        
         var ean13 = EAN13.generate(cardNumber);
         
         EAN13.draw(canvas, ean13, {
