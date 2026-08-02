@@ -15,18 +15,101 @@ if (!user || user.role !== 'cashier') {
 const storeId = user.storeId;
 const storeName = user.storeName || 'Магазин';
 
+// Данные для весовых товаров
+const weightProducts = {
+    'Выпечка': ['Хлеб белый', 'Хлеб черный', 'Батон', 'Булочка', 'Круассан', 'Пирожок', 'Кекс', 'Печенье'],
+    'Морепродукты': ['Креветки', 'Мидии', 'Осьминог', 'Кальмар', 'Рыба', 'Краб', 'Лангустины', 'Устрицы'],
+    'Овощи': ['Помидоры', 'Огурцы', 'Картофель', 'Морковь', 'Лук', 'Капуста', 'Перец', 'Чеснок', 'Свекла', 'Кабачки'],
+    'Фрукты': ['Яблоки', 'Бананы', 'Апельсины', 'Груши', 'Виноград', 'Киви', 'Манго', 'Авокадо', 'Лимон', 'Грейпфрут']
+};
+
+const weightPrices = {
+    'Хлеб белый': 45, 'Хлеб черный': 40, 'Батон': 35, 'Булочка': 25, 'Круассан': 55,
+    'Пирожок': 40, 'Кекс': 60, 'Печенье': 80,
+    'Креветки': 450, 'Мидии': 350, 'Осьминог': 400, 'Кальмар': 300, 'Рыба': 500,
+    'Краб': 600, 'Лангустины': 550, 'Устрицы': 700,
+    'Помидоры': 150, 'Огурцы': 80, 'Картофель': 50, 'Морковь': 40, 'Лук': 30,
+    'Капуста': 45, 'Перец': 120, 'Чеснок': 200, 'Свекла': 35, 'Кабачки': 60,
+    'Яблоки': 120, 'Бананы': 90, 'Апельсины': 110, 'Груши': 150, 'Виноград': 200,
+    'Киви': 80, 'Манго': 250, 'Авокадо': 180, 'Лимон': 60, 'Грейпфрут': 70
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('cashierName').innerHTML = `👤 ${user.fullName}`;
     document.getElementById('cashierStoreDisplay').innerHTML = `🏪 ${storeName}`;
     loadCashierHistory();
     updateCartUI();
+    updateWeightProducts();
 });
 
-// ===== ПОИСК КЛИЕНТА =====
+// ===== ВЕСОВЫЕ ТОВАРЫ =====
+function updateWeightProducts() {
+    const category = document.getElementById('weightCategory').value;
+    const products = weightProducts[category] || [];
+    const select = document.getElementById('weightProduct');
+    select.innerHTML = '';
+    products.forEach(p => {
+        const option = document.createElement('option');
+        option.value = p;
+        const price = weightPrices[p] || 0;
+        const unit = category === 'Выпечка' ? 'шт' : 'кг';
+        option.textContent = `${p} (${price} ₽/${unit})`;
+        select.appendChild(option);
+    });
+    
+    // Обновляем цену
+    updateWeightPrice();
+}
+
+function updateWeightPrice() {
+    const product = document.getElementById('weightProduct').value;
+    const price = weightPrices[product] || 0;
+    document.getElementById('weightPrice').value = price;
+}
+
+function addWeightProduct() {
+    const category = document.getElementById('weightCategory').value;
+    const product = document.getElementById('weightProduct').value;
+    const quantity = parseFloat(document.getElementById('weightQuantity').value) || 1;
+    const price = parseFloat(document.getElementById('weightPrice').value) || 0;
+    
+    if (!product || price <= 0) {
+        showToast('❌ Выберите товар и укажите цену', true);
+        return;
+    }
+    
+    const unit = category === 'Выпечка' ? 'шт' : 'кг';
+    const displayName = `${product} (${unit})`;
+    const finalPrice = currentClient ? price * 0.9 : price; // Скидка для клиентов с картой
+    
+    const existing = currentCart.find(item => item.name === displayName && item.isWeight);
+    if (existing) {
+        existing.quantity += quantity;
+        showToast(`➕ ${product} +${quantity} ${unit}`);
+    } else {
+        currentCart.push({
+            id: Date.now(),
+            name: displayName,
+            barcode: 'WEIGHT_' + product,
+            price: finalPrice,
+            quantity: quantity,
+            isWeight: true,
+            unit: unit,
+            originalName: product,
+            category: category
+        });
+        showToast(`✅ ${product} добавлен (${quantity} ${unit})`);
+    }
+    
+    document.getElementById('weightQuantity').value = 1;
+    updateCartUI();
+}
+
+// ===== ПОИСК КЛИЕНТА (по номеру карты, телефону или никнейму) =====
 function scanClient() {
     const input = document.getElementById('clientScanInput').value.trim();
     if (!input) {
-        showToast('❌ Введите номер карты или отсканируйте штрихкод', true);
+        showToast('❌ Введите номер карты, телефон или никнейм', true);
         return;
     }
     
@@ -39,7 +122,11 @@ function scanClient() {
         
         for (let key in clients) {
             const c = clients[key];
-            if (c.cardNumber === cleanInput || c.phone === input || c.phone === cleanInput) {
+            // Поиск по карте, телефону или никнейму
+            if (c.cardNumber === cleanInput || 
+                c.phone === input || 
+                c.phone === cleanInput ||
+                (c.nickname && c.nickname.toLowerCase() === input.toLowerCase())) {
                 found = c;
                 foundId = key;
                 break;
@@ -48,12 +135,15 @@ function scanClient() {
         
         if (found) {
             currentClient = { id: foundId, ...found };
+            const displayName = found.nickname || found.fullName;
             const container = document.getElementById('scannedClient');
             container.style.display = 'flex';
             container.innerHTML = `
                 <div class="member-info">
                     <div>
-                        <strong>${found.fullName}</strong><br>
+                        <strong>${displayName}</strong>
+                        ${found.nickname ? `<span style="font-size:0.7rem; color:#7a8a9e;">(${found.fullName})</span>` : ''}
+                        <br>
                         <span class="badge">🎫 ${found.cardNumber}</span><br>
                         <span style="font-size:0.8rem;">⭐ ${found.balance || 0} баллов</span>
                     </div>
@@ -61,37 +151,22 @@ function scanClient() {
                 <button class="small-btn danger" onclick="clearScannedClient()">✕ Очистить</button>
             `;
             
-            // Показываем секцию списания баллов
             document.getElementById('discountSection').style.display = 'block';
             document.getElementById('clientPointsDisplay').innerText = found.balance || 0;
             document.getElementById('discountInfo').innerHTML = '';
             discountAmount = 0;
             
-            // Обновляем цены в корзине со скидкой
             updateCartPricesWithDiscount();
             
-            showToast(`🎫 Карта найдена: ${found.fullName}`);
+            showToast(`🎫 Карта найдена: ${displayName}`);
         } else {
             showToast('❌ Клиент не найден', true);
             document.getElementById('discountSection').style.display = 'none';
             currentClient = null;
-            // Возвращаем обычные цены
             updateCartPricesWithoutDiscount();
         }
         document.getElementById('clientScanInput').value = '';
     });
-}
-
-function clearScannedClient() {
-    currentClient = null;
-    discountAmount = 0;
-    document.getElementById('scannedClient').style.display = 'none';
-    document.getElementById('scannedClient').innerHTML = '';
-    document.getElementById('discountSection').style.display = 'none';
-    document.getElementById('discountInfo').innerHTML = '';
-    // Возвращаем обычные цены
-    updateCartPricesWithoutDiscount();
-    updateCartUI();
 }
 
 // ===== ОБНОВЛЕНИЕ ЦЕН В КОРЗИНЕ =====
@@ -99,38 +174,179 @@ function updateCartPricesWithDiscount() {
     if (!currentClient) return;
     
     for (let item of currentCart) {
-        // Ищем товар в базе магазина
-        db.ref('stores/' + storeId + '/products').orderByChild('barcode').equalTo(item.barcode).once('value', snap => {
-            let product = null;
-            snap.forEach(child => {
-                product = child.val();
+        if (item.isWeight) {
+            // Весовые товары: скидка 10%
+            const basePrice = weightPrices[item.originalName] || item.price;
+            item.price = basePrice * 0.9;
+        } else {
+            // Товары со штрихкодом
+            db.ref('stores/' + storeId + '/products').orderByChild('barcode').equalTo(item.barcode).once('value', snap => {
+                let product = null;
+                snap.forEach(child => {
+                    product = child.val();
+                });
+                if (product) {
+                    item.price = product.discountPrice;
+                    updateCartUI();
+                }
             });
-            if (product) {
-                // Меняем цену на цену со скидкой
-                item.price = product.discountPrice;
-                updateCartUI();
-            }
-        });
+        }
     }
+    updateCartUI();
 }
 
 function updateCartPricesWithoutDiscount() {
     for (let item of currentCart) {
-        db.ref('stores/' + storeId + '/products').orderByChild('barcode').equalTo(item.barcode).once('value', snap => {
-            let product = null;
-            snap.forEach(child => {
-                product = child.val();
+        if (item.isWeight) {
+            const basePrice = weightPrices[item.originalName] || 0;
+            item.price = basePrice;
+        } else {
+            db.ref('stores/' + storeId + '/products').orderByChild('barcode').equalTo(item.barcode).once('value', snap => {
+                let product = null;
+                snap.forEach(child => {
+                    product = child.val();
+                });
+                if (product) {
+                    item.price = product.price;
+                    updateCartUI();
+                }
             });
-            if (product) {
-                // Возвращаем обычную цену
-                item.price = product.price;
-                updateCartUI();
-            }
+        }
+    }
+    updateCartUI();
+}
+
+// ===== ДОБАВЛЕНИЕ ТОВАРА СО ШТРИХКОДОМ =====
+function addToCart() {
+    const barcode = document.getElementById('cartBarcodeInput').value.trim();
+    const quantity = parseInt(document.getElementById('cartQuantity').value) || 1;
+    
+    if (!barcode) {
+        showToast('❌ Отсканируйте штрихкод товара', true);
+        return;
+    }
+    
+    db.ref('stores/' + storeId + '/products').orderByChild('barcode').equalTo(barcode).once('value', snap => {
+        let product = null;
+        snap.forEach(child => {
+            product = child.val();
         });
+        
+        if (!product) {
+            showToast(`❌ Товар не найден!`, true);
+            document.getElementById('cartBarcodeInput').value = '';
+            return;
+        }
+        
+        const price = currentClient ? product.discountPrice : product.price;
+        
+        const existing = currentCart.find(item => item.barcode === barcode && !item.isWeight);
+        if (existing) {
+            existing.quantity += quantity;
+            showToast(`➕ ${product.name} +${quantity}`);
+        } else {
+            currentCart.push({
+                id: Date.now(),
+                barcode: barcode,
+                name: product.name,
+                price: price,
+                quantity: quantity,
+                isWeight: false
+            });
+            showToast(`✅ ${product.name} добавлен`);
+        }
+        
+        document.getElementById('cartBarcodeInput').value = '';
+        document.getElementById('cartQuantity').value = '1';
+        updateCartUI();
+    });
+}
+
+// ===== КОРЗИНА =====
+function updateCartUI() {
+    const container = document.getElementById('cartList');
+    cartTotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    originalTotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const finalTotal = Math.max(0, cartTotal - discountAmount);
+    document.getElementById('cartTotal').innerText = finalTotal.toFixed(2);
+    
+    if (currentCart.length === 0) {
+        container.innerHTML = '<div class="empty-state">Корзина пуста</div>';
+        return;
+    }
+    
+    let html = '';
+    currentCart.forEach((item, idx) => {
+        const unit = item.isWeight ? (item.unit || 'кг') : 'шт';
+        const displayQty = item.isWeight ? item.quantity.toFixed(2) : item.quantity;
+        html += `
+            <div class="history-item">
+                <div>
+                    <strong>${item.name}</strong>
+                    ${item.isWeight ? `<span style="font-size:0.7rem; color:#7a8a9e; display:block;">⚖️ Весовой (${unit})</span>` : `<span style="font-size:0.7rem; color:#7a8a9e; display:block;">Штрихкод: ${item.barcode}</span>`}
+                    ${currentClient ? '<span style="font-size:0.7rem; color:#1d6f2c;">✅ Со скидкой</span>' : ''}
+                </div>
+                <div style="text-align:right;">
+                    ${displayQty} ${unit} × ${item.price.toFixed(2)} ₽ = ${(item.price * item.quantity).toFixed(2)} ₽
+                    <button class="small-btn danger" onclick="removeFromCart(${idx})" style="display:block; margin-top:4px;">✕ Удалить</button>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+    
+    if (discountAmount > 0) {
+        document.getElementById('discountInfo').innerHTML = `✅ Скидка: ${discountAmount.toFixed(2)} ₽ (${discountAmount * 10} баллов)`;
     }
 }
 
-// ===== СПИСАНИЕ БАЛЛОВ =====
+function removeFromCart(idx) {
+    currentCart.splice(idx, 1);
+    updateCartUI();
+    showToast('🗑 Товар удалён');
+}
+
+function clearCart() {
+    if (currentCart.length === 0) return;
+    if (!confirm('Очистить корзину?')) return;
+    currentCart = [];
+    discountAmount = 0;
+    selectedPayment = null;
+    document.querySelectorAll('.payment-btn').forEach(b => b.style.background = '#eef2f8');
+    document.getElementById('cashInputArea').style.display = 'none';
+    document.getElementById('changeDisplay').style.display = 'none';
+    document.getElementById('discountInfo').innerHTML = '';
+    updateCartUI();
+    showToast('🗑 Корзина очищена');
+}
+
+// ===== ОСТАЛЬНЫЕ ФУНКЦИИ (ОПЛАТА, ИСТОРИЯ, ТОСТ) =====
+function selectPayment(method) {
+    selectedPayment = method;
+    document.querySelectorAll('.payment-btn').forEach(b => b.style.background = '#eef2f8');
+    document.getElementById('payCash').style.background = method === 'cash' ? '#1d6f2c' : '#eef2f8';
+    document.getElementById('payCash').style.color = method === 'cash' ? 'white' : '#1a1a2e';
+    document.getElementById('payCard').style.background = method === 'card' ? '#1a1a2e' : '#eef2f8';
+    document.getElementById('payCard').style.color = method === 'card' ? 'white' : '#1a1a2e';
+    
+    document.getElementById('cashInputArea').style.display = method === 'cash' ? 'block' : 'none';
+    if (method === 'cash') {
+        document.getElementById('cashGiven').focus();
+        document.getElementById('cashGiven').addEventListener('input', calculateChange);
+    }
+}
+
+function calculateChange() {
+    const total = Math.max(0, cartTotal - discountAmount);
+    const given = parseFloat(document.getElementById('cashGiven').value);
+    if (!isNaN(given) && given >= total) {
+        document.getElementById('changeAmount').innerText = (given - total).toFixed(2) + ' ₽';
+        document.getElementById('changeDisplay').style.display = 'block';
+    } else {
+        document.getElementById('changeDisplay').style.display = 'none';
+    }
+}
+
 function applyDiscount() {
     if (!currentClient) {
         showToast('❌ Сначала найдите клиента!', true);
@@ -173,171 +389,6 @@ function removeDiscount() {
     }
 }
 
-// ===== ДОБАВЛЕНИЕ ТОВАРА В СИСТЕМУ =====
-function addProductToSystem() {
-    const barcode = document.getElementById('productBarcode').value.trim();
-    const name = document.getElementById('productName').value.trim();
-    const price = parseFloat(document.getElementById('productPrice').value);
-    const discountPrice = parseFloat(document.getElementById('productDiscountPrice').value);
-    
-    if (!barcode || !name || isNaN(price) || price <= 0 || isNaN(discountPrice) || discountPrice <= 0) {
-        showToast('❌ Заполните все поля!', true);
-        return;
-    }
-    
-    db.ref('stores/' + storeId + '/products').orderByChild('barcode').equalTo(barcode).once('value', snap => {
-        if (snap.exists()) {
-            showToast('❌ Товар с таким штрихкодом уже есть!', true);
-            return;
-        }
-        
-        const productData = {
-            barcode: barcode,
-            name: name,
-            price: price,
-            discountPrice: discountPrice,
-            createdAt: new Date().toISOString()
-        };
-        
-        db.ref('stores/' + storeId + '/products').push(productData).then(() => {
-            document.getElementById('productBarcode').value = '';
-            document.getElementById('productName').value = '';
-            document.getElementById('productPrice').value = '';
-            document.getElementById('productDiscountPrice').value = '';
-            showToast(`✅ Товар "${name}" добавлен!`);
-        }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
-    });
-}
-
-// ===== ДОБАВЛЕНИЕ В КОРЗИНУ =====
-function addToCart() {
-    const barcode = document.getElementById('cartBarcodeInput').value.trim();
-    const quantity = parseInt(document.getElementById('cartQuantity').value) || 1;
-    
-    if (!barcode) {
-        showToast('❌ Отсканируйте штрихкод товара', true);
-        return;
-    }
-    
-    db.ref('stores/' + storeId + '/products').orderByChild('barcode').equalTo(barcode).once('value', snap => {
-        let product = null;
-        snap.forEach(child => {
-            product = child.val();
-        });
-        
-        if (!product) {
-            showToast(`❌ Товар не найден!`, true);
-            document.getElementById('cartBarcodeInput').value = '';
-            return;
-        }
-        
-        // Если есть клиент - используем цену со скидкой
-        const price = currentClient ? product.discountPrice : product.price;
-        
-        const existing = currentCart.find(item => item.barcode === barcode);
-        if (existing) {
-            existing.quantity += quantity;
-            showToast(`➕ ${product.name} +${quantity}`);
-        } else {
-            currentCart.push({
-                barcode: barcode,
-                name: product.name,
-                price: price,
-                quantity: quantity
-            });
-            showToast(`✅ ${product.name} добавлен`);
-        }
-        
-        document.getElementById('cartBarcodeInput').value = '';
-        document.getElementById('cartQuantity').value = '1';
-        updateCartUI();
-    });
-}
-
-// ===== КОРЗИНА =====
-function updateCartUI() {
-    const container = document.getElementById('cartList');
-    cartTotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    originalTotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const finalTotal = Math.max(0, cartTotal - discountAmount);
-    document.getElementById('cartTotal').innerText = finalTotal.toFixed(2);
-    
-    if (currentCart.length === 0) {
-        container.innerHTML = '<div class="empty-state">Корзина пуста</div>';
-        return;
-    }
-    
-    let html = '';
-    currentCart.forEach((item, idx) => {
-        html += `
-            <div class="history-item">
-                <div>
-                    <strong>${item.name}</strong>
-                    <span style="font-size:0.7rem; color:#7a8a9e; display:block;">Штрихкод: ${item.barcode}</span>
-                    ${currentClient ? '<span style="font-size:0.7rem; color:#1d6f2c;">✅ Со скидкой</span>' : ''}
-                </div>
-                <div style="text-align:right;">
-                    ${item.quantity} шт. × ${item.price.toFixed(2)} ₽ = ${(item.price * item.quantity).toFixed(2)} ₽
-                    <button class="small-btn danger" onclick="removeFromCart(${idx})" style="display:block; margin-top:4px;">✕ Удалить</button>
-                </div>
-            </div>
-        `;
-    });
-    container.innerHTML = html;
-    
-    if (discountAmount > 0) {
-        document.getElementById('discountInfo').innerHTML = `✅ Скидка: ${discountAmount.toFixed(2)} ₽ (${discountAmount * 10} баллов)`;
-    }
-}
-
-function removeFromCart(idx) {
-    currentCart.splice(idx, 1);
-    updateCartUI();
-    showToast('🗑 Товар удалён');
-}
-
-function clearCart() {
-    if (currentCart.length === 0) return;
-    if (!confirm('Очистить корзину?')) return;
-    currentCart = [];
-    discountAmount = 0;
-    selectedPayment = null;
-    document.querySelectorAll('.payment-btn').forEach(b => b.style.background = '#eef2f8');
-    document.getElementById('cashInputArea').style.display = 'none';
-    document.getElementById('changeDisplay').style.display = 'none';
-    document.getElementById('discountInfo').innerHTML = '';
-    updateCartUI();
-    showToast('🗑 Корзина очищена');
-}
-
-// ===== ВЫБОР ОПЛАТЫ =====
-function selectPayment(method) {
-    selectedPayment = method;
-    document.querySelectorAll('.payment-btn').forEach(b => b.style.background = '#eef2f8');
-    document.getElementById('payCash').style.background = method === 'cash' ? '#1d6f2c' : '#eef2f8';
-    document.getElementById('payCash').style.color = method === 'cash' ? 'white' : '#1a1a2e';
-    document.getElementById('payCard').style.background = method === 'card' ? '#1a1a2e' : '#eef2f8';
-    document.getElementById('payCard').style.color = method === 'card' ? 'white' : '#1a1a2e';
-    
-    document.getElementById('cashInputArea').style.display = method === 'cash' ? 'block' : 'none';
-    if (method === 'cash') {
-        document.getElementById('cashGiven').focus();
-        document.getElementById('cashGiven').addEventListener('input', calculateChange);
-    }
-}
-
-function calculateChange() {
-    const total = Math.max(0, cartTotal - discountAmount);
-    const given = parseFloat(document.getElementById('cashGiven').value);
-    if (!isNaN(given) && given >= total) {
-        document.getElementById('changeAmount').innerText = (given - total).toFixed(2) + ' ₽';
-        document.getElementById('changeDisplay').style.display = 'block';
-    } else {
-        document.getElementById('changeDisplay').style.display = 'none';
-    }
-}
-
-// ===== ОПЛАТА =====
 async function processPayment() {
     if (currentCart.length === 0) {
         showToast('❌ Корзина пуста!', true);
@@ -373,7 +424,11 @@ async function processPayment() {
         discount: discountAmount,
         pointsEarned: pointsEarned,
         pointsUsed: discountAmount * 10,
-        items: currentCart.map(i => `${i.name} x${i.quantity}`).join(', '),
+        items: currentCart.map(i => {
+            const unit = i.isWeight ? (i.unit || 'кг') : 'шт';
+            const qty = i.isWeight ? i.quantity.toFixed(2) : i.quantity;
+            return `${i.name} ${qty}${unit}`;
+        }).join(', '),
         cashier: user.fullName,
         storeId: storeId,
         storeName: storeName,
@@ -398,7 +453,7 @@ async function processPayment() {
         
         const cashierPurchase = {
             ...purchase,
-            clientName: currentClient ? currentClient.fullName : 'Без карты'
+            clientName: currentClient ? (currentClient.nickname || currentClient.fullName) : 'Без карты'
         };
         await db.ref('cashier_history').push(cashierPurchase);
         await db.ref('stores/' + storeId + '/history').push(cashierPurchase);
@@ -420,7 +475,17 @@ async function processPayment() {
     }
 }
 
-// ===== ИСТОРИЯ =====
+function clearScannedClient() {
+    currentClient = null;
+    discountAmount = 0;
+    document.getElementById('scannedClient').style.display = 'none';
+    document.getElementById('scannedClient').innerHTML = '';
+    document.getElementById('discountSection').style.display = 'none';
+    document.getElementById('discountInfo').innerHTML = '';
+    updateCartPricesWithoutDiscount();
+    updateCartUI();
+}
+
 function loadCashierHistory() {
     const container = document.getElementById('cashierHistory');
     container.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
@@ -455,7 +520,6 @@ function loadCashierHistory() {
     });
 }
 
-// ===== TOAST =====
 function showToast(msg, isError = false) {
     const toast = document.getElementById('toast');
     if (!toast) return;
@@ -465,3 +529,8 @@ function showToast(msg, isError = false) {
     clearTimeout(toast._timer);
     toast._timer = setTimeout(() => toast.style.display = 'none', 3000);
 }
+
+// Инициализация весовых товаров
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('weightProduct').addEventListener('change', updateWeightPrice);
+});
