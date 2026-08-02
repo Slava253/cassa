@@ -26,51 +26,78 @@
         </div>
 
         <div class="main-content">
+            <!-- Информация о клиенте -->
             <div class="card">
                 <div class="card-title">👤 Личный кабинет</div>
                 <div id="clientInfo" class="member-info" style="margin-bottom:16px;"></div>
             </div>
 
-            <!-- EAN-13 Штрихкод -->
-            <div class="card">
-                <div class="card-title">📱 Ваш штрихкод EAN-13</div>
-                
-                <!-- Выбор цвета штрихкода -->
-                <div style="margin-bottom:16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-                    <label style="font-weight:600; font-size:0.85rem;">Цвет штрихкода:</label>
-                    <button onclick="changeBarcodeColor('#000000')" class="color-btn" style="background:#000000; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
-                    <button onclick="changeBarcodeColor('#1a1a2e')" class="color-btn" style="background:#1a1a2e; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
-                    <button onclick="changeBarcodeColor('#2d6a4f')" class="color-btn" style="background:#2d6a4f; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
-                    <button onclick="changeBarcodeColor('#1a237e')" class="color-btn" style="background:#1a237e; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
-                    <button onclick="changeBarcodeColor('#b71c1c')" class="color-btn" style="background:#b71c1c; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
-                    <button onclick="changeBarcodeColor('#e65100')" class="color-btn" style="background:#e65100; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
-                    <button onclick="changeBarcodeColor('#4a148c')" class="color-btn" style="background:#4a148c; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
-                    <button onclick="changeBarcodeColor('#ffffff')" class="color-btn" style="background:#ffffff; width:40px; height:40px; border-radius:50%; border:2px solid #333; color:#333;">⬜</button>
-                </div>
+            <!-- Разделы вкладок для клиента -->
+            <div class="tabs" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+                <button class="tab-btn active" data-tab="client-profile" onclick="switchClientTab('profile')">👤 Профиль</button>
+                <button class="tab-btn" data-tab="client-card" onclick="switchClientTab('card')">📱 Карта</button>
+                <button class="tab-btn" data-tab="client-history" onclick="switchClientTab('history')">📜 История</button>
+            </div>
 
-                <div style="text-align:center; padding:20px; background:white; border-radius:20px; border:2px solid #dae2ec;">
-                    <canvas id="barcodeCanvas" style="max-width:100%; margin:0 auto; background:#ffffff; border-radius:8px;"></canvas>
-                    <p id="barcodeNumber" style="font-size:1rem; font-family:monospace; color:#1a1a2e; margin-top:10px; letter-spacing:3px; font-weight:bold;"></p>
-                    <p style="font-size:0.8rem; color:#7a8a9e; margin-top:8px;">Покажите этот штрихкод кассиру в любом магазине</p>
-                    <p style="font-size:0.7rem; color:#3e5f7e; margin-top:4px;">✅ Единая карта для всех магазинов</p>
-                    <div style="margin-top:12px;">
-                        <button onclick="downloadBarcode()" class="btn-success" style="font-size:0.85rem; padding:8px 20px;">💾 Скачать штрихкод</button>
+            <!-- Вкладка ПРОФИЛЬ -->
+            <div id="client-profile" class="tab-content active">
+                <div class="card">
+                    <div class="card-title">👤 Профиль</div>
+                    
+                    <div class="form-group">
+                        <label>📱 Номер телефона</label>
+                        <input type="text" id="profilePhone" readonly style="background:#f0f4f9; color:#1a1a2e; font-weight:500;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>✏️ Никнейм (будет виден кассиру)</label>
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <input type="text" id="profileNickname" placeholder="Введите никнейм" style="flex:2; min-width:200px;">
+                            <button onclick="saveNickname()" class="btn-success" style="flex:0;">💾 Сохранить</button>
+                        </div>
+                        <div id="nicknameStatus" style="margin-top:8px; font-size:0.85rem; color:#7a8a9e;"></div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top:16px; padding-top:16px; border-top:2px solid #eef2f8;">
+                        <label>💳 Номер карты</label>
+                        <input type="text" id="profileCardNumber" readonly style="background:#f0f4f9; color:#1a1a2e; font-weight:500; font-family:monospace;">
                     </div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-title">⭐ Бонусный баланс</div>
-                <div style="text-align:center; padding:20px;">
-                    <div style="font-size:3rem; font-weight:bold; color:#1a1a2e;" id="clientBalance">0</div>
-                    <div style="color:#7a8a9e;">баллов</div>
-                    <div style="font-size:0.8rem; color:#3e5f7e; margin-top:8px;">За каждые 100₽ в чеке вы получаете 5 баллов</div>
+            <!-- Вкладка КАРТА -->
+            <div id="client-card" class="tab-content" style="display:none;">
+                <div class="card">
+                    <div class="card-title">📱 Ваш штрихкод EAN-13</div>
+                    
+                    <div style="margin-bottom:16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                        <label style="font-weight:600; font-size:0.85rem;">Цвет штрихкода:</label>
+                        <button onclick="changeBarcodeColor('#000000')" class="color-btn" style="background:#000000; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
+                        <button onclick="changeBarcodeColor('#1a1a2e')" class="color-btn" style="background:#1a1a2e; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
+                        <button onclick="changeBarcodeColor('#2d6a4f')" class="color-btn" style="background:#2d6a4f; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
+                        <button onclick="changeBarcodeColor('#1a237e')" class="color-btn" style="background:#1a237e; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
+                        <button onclick="changeBarcodeColor('#b71c1c')" class="color-btn" style="background:#b71c1c; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
+                        <button onclick="changeBarcodeColor('#ffffff')" class="color-btn" style="background:#ffffff; width:40px; height:40px; border-radius:50%; border:2px solid #333; color:#333;">⬜</button>
+                    </div>
+
+                    <div style="text-align:center; padding:20px; background:white; border-radius:20px; border:2px solid #dae2ec;">
+                        <canvas id="barcodeCanvas" style="max-width:100%; margin:0 auto; background:#ffffff; border-radius:8px;"></canvas>
+                        <p id="barcodeNumber" style="font-size:1rem; font-family:monospace; color:#1a1a2e; margin-top:10px; letter-spacing:3px; font-weight:bold;"></p>
+                        <p style="font-size:0.8rem; color:#7a8a9e; margin-top:8px;">Покажите этот штрихкод кассиру в любом магазине</p>
+                        <p style="font-size:0.7rem; color:#3e5f7e; margin-top:4px;">✅ Единая карта для всех магазинов</p>
+                        <div style="margin-top:12px;">
+                            <button onclick="downloadBarcode()" class="btn-success" style="font-size:0.85rem; padding:8px 20px;">💾 Скачать штрихкод</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-title">📜 История покупок</div>
-                <div id="clientHistory"><div class="loading-spinner">Загрузка...</div></div>
+            <!-- Вкладка ИСТОРИЯ -->
+            <div id="client-history" class="tab-content" style="display:none;">
+                <div class="card">
+                    <div class="card-title">📜 История покупок</div>
+                    <div id="clientHistory"><div class="loading-spinner">Загрузка...</div></div>
+                </div>
             </div>
         </div>
     </div>
