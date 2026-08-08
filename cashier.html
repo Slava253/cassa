@@ -54,9 +54,45 @@
                 <div id="discountInfo" style="margin-top:8px; font-weight:bold; color:#1d6f2c;"></div>
             </div>
 
-            <!-- ВЕСОВЫЕ ТОВАРЫ -->
+            <!-- Управление товарами -->
+            <div class="card" style="border: 2px solid #d4a13e;">
+                <div class="card-title">📦 Управление товарами</div>
+                <div style="margin-bottom:12px;">
+                    <label style="font-weight:600; font-size:0.85rem;">🔍 Поиск товара по штрихкоду</label>
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:4px;">
+                        <input type="text" id="searchProductBarcode" placeholder="Введите штрихкод" style="flex:2; min-width:150px;">
+                        <button onclick="searchProduct()" style="flex:0;">🔍 Найти</button>
+                    </div>
+                </div>
+                <div id="productEditResult" style="display:none; padding:12px; background:#f8faff; border-radius:16px; margin-bottom:12px;"></div>
+                <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:8px;">
+                    <div class="form-group" style="flex:1; min-width:120px;">
+                        <label>🔲 Штрихкод</label>
+                        <input type="text" id="editBarcode" placeholder="4601234567890" style="font-size:1rem; font-family:monospace;">
+                    </div>
+                    <div class="form-group" style="flex:2; min-width:150px;">
+                        <label>📝 Название</label>
+                        <input type="text" id="editName" placeholder="Название товара">
+                    </div>
+                    <div class="form-group" style="flex:1; min-width:100px;">
+                        <label>💰 Цена (₽)</label>
+                        <input type="number" id="editPrice" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group" style="flex:1; min-width:100px;">
+                        <label>💎 Цена со скидкой</label>
+                        <input type="number" id="editDiscountPrice" step="0.01" placeholder="0.00">
+                    </div>
+                    <div style="display:flex; gap:8px; align-self:flex-end; flex-wrap:wrap;">
+                        <button onclick="saveProductEdit()" class="btn-success">💾 Сохранить</button>
+                        <button onclick="deleteProduct()" class="btn-danger">🗑 Удалить</button>
+                        <button onclick="clearProductEdit()" class="btn-warning">✕ Отмена</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Весовые товары -->
             <div class="card" style="border: 2px solid #f6b83d;">
-                <div class="card-title">⚖️ Весовые товары (без штрихкода)</div>
+                <div class="card-title">⚖️ Весовые товары</div>
                 <div style="display:flex; gap:12px; flex-wrap:wrap;">
                     <div class="form-group" style="flex:1; min-width:150px;">
                         <label>Категория</label>
@@ -86,12 +122,12 @@
                 </div>
             </div>
 
-            <!-- Добавление товара со штрихкодом -->
-            <div class="card" style="border: 2px solid #d4a13e;">
-                <div class="card-title">📦 Товар со штрихкодом</div>
+            <!-- Сканирование товара в корзину -->
+            <div class="card">
+                <div class="card-title">🛒 Сканировать товар в корзину</div>
                 <div style="display:flex; gap:12px; flex-wrap:wrap;">
                     <div class="form-group" style="flex:2; min-width:200px;">
-                        <label>🔲 Штрихкод</label>
+                        <label>🔲 Отсканируйте штрихкод</label>
                         <input type="text" id="cartBarcodeInput" placeholder="4601234567890" style="font-size:1.2rem; font-family:monospace;">
                     </div>
                     <div class="form-group" style="flex:1; min-width:80px;">
@@ -99,9 +135,6 @@
                         <input type="number" id="cartQuantity" value="1" min="1">
                     </div>
                     <button onclick="addToCart()" style="align-self:flex-end;">➕ Добавить</button>
-                </div>
-                <div style="margin-top:8px; font-size:0.8rem; color:#7a8a9e;">
-                    💡 Для добавления весовых товаров используйте секцию выше
                 </div>
             </div>
 
