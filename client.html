@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
     <meta name="theme-color" content="#1a1a2e">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="manifest" href="manifest.json">
@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/mobile.css">
+    <script src="https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -26,7 +27,6 @@
         </div>
 
         <div class="main-content">
-            <!-- Информация о клиенте -->
             <div class="card">
                 <div class="card-title">👤 Личный кабинет</div>
                 <div id="clientInfo" class="member-info" style="margin-bottom:16px;"></div>
@@ -37,7 +37,7 @@
                 <div class="card-title">🏪 Выбор магазина</div>
                 <div style="display:flex; gap:12px; flex-wrap:wrap;">
                     <div class="form-group" style="flex:2; min-width:200px;">
-                        <label>Выберите магазин для просмотра цен</label>
+                        <label>Выберите магазин</label>
                         <select id="clientStoreSelector" onchange="changeClientStore()">
                             <option value="">Загрузка магазинов...</option>
                         </select>
@@ -50,44 +50,54 @@
             <!-- Сканер цен -->
             <div class="card" style="border: 2px solid #1d6f2c;">
                 <div class="card-title">🔍 Сканер цен</div>
-                <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                    <div class="form-group" style="flex:2; min-width:200px;">
-                        <label>Отсканируйте или введите штрихкод товара</label>
+                <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+                    <div class="form-group" style="flex:1;">
+                        <label>Введите штрихкод вручную</label>
                         <input type="text" id="priceScannerInput" placeholder="4601234567890" style="font-size:1.2rem; font-family:monospace;">
                     </div>
-                    <button onclick="scanPrice()" style="align-self:flex-end;">🔍 Узнать цену</button>
+                    <button onclick="scanPrice()" style="align-self:flex-end;">🔍 Найти</button>
+                    <button onclick="startCameraScanner()" class="btn-success" style="align-self:flex-end;">📷 Сканировать камерой</button>
                 </div>
-                <div id="priceResult" style="margin-top:12px; display:none; padding:16px; background:#f8faff; border-radius:16px; border:1px solid #eef2f8;">
+                
+                <div id="scannerContainer" style="display:none; position:relative; background:#000; border-radius:16px; overflow:hidden; margin-bottom:12px;">
+                    <video id="scannerVideo" style="width:100%; max-height:300px; object-fit:cover;"></video>
+                    <div style="position:absolute; bottom:10px; left:0; right:0; text-align:center;">
+                        <button onclick="stopCameraScanner()" class="btn-danger" style="padding:8px 20px;">❌ Остановить сканер</button>
+                    </div>
+                    <div id="scannerResult" style="position:absolute; top:10px; left:0; right:0; text-align:center; color:white; background:rgba(0,0,0,0.7); padding:8px; display:none;">
+                        <span id="scannerResultText"></span>
+                    </div>
+                </div>
+                
+                <div id="priceResult" style="display:none; padding:16px; background:#f8faff; border-radius:16px; border:1px solid #eef2f8;">
                     <div id="priceResultContent"></div>
                 </div>
             </div>
 
-            <!-- Разделы вкладок для клиента -->
+            <!-- Вкладки -->
             <div class="tabs" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
                 <button class="tab-btn active" data-tab="client-profile" onclick="switchClientTab('profile')">👤 Профиль</button>
+                <button class="tab-btn" data-tab="client-shop" onclick="switchClientTab('shop')">🏪 Магазин</button>
                 <button class="tab-btn" data-tab="client-card" onclick="switchClientTab('card')">📱 Карта</button>
                 <button class="tab-btn" data-tab="client-history" onclick="switchClientTab('history')">📜 История</button>
             </div>
 
-            <!-- Вкладка ПРОФИЛЬ -->
+            <!-- Профиль -->
             <div id="client-profile" class="tab-content active">
                 <div class="card">
                     <div class="card-title">👤 Профиль</div>
-                    
                     <div class="form-group">
                         <label>📱 Номер телефона</label>
                         <input type="text" id="profilePhone" readonly style="background:#f0f4f9; color:#1a1a2e; font-weight:500;">
                     </div>
-                    
                     <div class="form-group">
-                        <label>✏️ Никнейм (будет виден кассиру)</label>
+                        <label>✏️ Никнейм</label>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
                             <input type="text" id="profileNickname" placeholder="Введите никнейм" style="flex:2; min-width:200px;">
                             <button onclick="saveNickname()" class="btn-success" style="flex:0;">💾 Сохранить</button>
                         </div>
                         <div id="nicknameStatus" style="margin-top:8px; font-size:0.85rem; color:#7a8a9e;"></div>
                     </div>
-                    
                     <div class="form-group" style="margin-top:16px; padding-top:16px; border-top:2px solid #eef2f8;">
                         <label>💳 Номер карты</label>
                         <input type="text" id="profileCardNumber" readonly style="background:#f0f4f9; color:#1a1a2e; font-weight:500; font-family:monospace;">
@@ -95,7 +105,15 @@
                 </div>
             </div>
 
-            <!-- Вкладка КАРТА -->
+            <!-- Магазин -->
+            <div id="client-shop" class="tab-content" style="display:none;">
+                <div class="card">
+                    <div class="card-title">🏪 Ассортимент магазина</div>
+                    <div id="storeProductsList"><div class="empty-state">Выберите магазин для просмотра товаров</div></div>
+                </div>
+            </div>
+
+            <!-- Карта -->
             <div id="client-card" class="tab-content" style="display:none;">
                 <div class="card">
                     <div class="card-title">📱 Ваш штрихкод EAN-13</div>
@@ -122,7 +140,7 @@
                 </div>
             </div>
 
-            <!-- Вкладка ИСТОРИЯ -->
+            <!-- История -->
             <div id="client-history" class="tab-content" style="display:none;">
                 <div class="card">
                     <div class="card-title">📜 История покупок</div>
