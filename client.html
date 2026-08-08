@@ -32,6 +32,36 @@
                 <div id="clientInfo" class="member-info" style="margin-bottom:16px;"></div>
             </div>
 
+            <!-- Выбор магазина -->
+            <div class="card" style="border: 2px solid #f6b83d;">
+                <div class="card-title">🏪 Выбор магазина</div>
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                    <div class="form-group" style="flex:2; min-width:200px;">
+                        <label>Выберите магазин для просмотра цен</label>
+                        <select id="clientStoreSelector" onchange="changeClientStore()">
+                            <option value="">Загрузка магазинов...</option>
+                        </select>
+                    </div>
+                    <button onclick="loadClientStores()" style="align-self:flex-end;">🔄 Обновить</button>
+                </div>
+                <div id="selectedStoreDisplay" style="margin-top:8px; font-size:0.85rem; color:#3e5f7e;"></div>
+            </div>
+
+            <!-- Сканер цен -->
+            <div class="card" style="border: 2px solid #1d6f2c;">
+                <div class="card-title">🔍 Сканер цен</div>
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                    <div class="form-group" style="flex:2; min-width:200px;">
+                        <label>Отсканируйте или введите штрихкод товара</label>
+                        <input type="text" id="priceScannerInput" placeholder="4601234567890" style="font-size:1.2rem; font-family:monospace;">
+                    </div>
+                    <button onclick="scanPrice()" style="align-self:flex-end;">🔍 Узнать цену</button>
+                </div>
+                <div id="priceResult" style="margin-top:12px; display:none; padding:16px; background:#f8faff; border-radius:16px; border:1px solid #eef2f8;">
+                    <div id="priceResultContent"></div>
+                </div>
+            </div>
+
             <!-- Разделы вкладок для клиента -->
             <div class="tabs" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
                 <button class="tab-btn active" data-tab="client-profile" onclick="switchClientTab('profile')">👤 Профиль</button>
