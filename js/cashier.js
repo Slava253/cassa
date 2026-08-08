@@ -6,6 +6,7 @@ let cartTotal = 0;
 let selectedPayment = null;
 let discountAmount = 0;
 let originalTotal = 0;
+let editingProductKey = null;
 
 const user = checkAuth();
 if (!user || user.role !== 'cashier') {
@@ -42,6 +43,123 @@ document.addEventListener('DOMContentLoaded', function() {
     updateWeightProducts();
 });
 
+// ===== УПРАВЛЕНИЕ ТОВАРАМИ (РЕДАКТИРОВАНИЕ И УДАЛЕНИЕ) =====
+function searchProduct() {
+    const barcode = document.getElementById('searchProductBarcode').value.trim();
+    if (!barcode) {
+        showToast('❌ Введите штрихкод товара', true);
+        return;
+    }
+    
+    const resultDiv = document.getElementById('productEditResult');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div class="loading-spinner">Поиск...</div>';
+    
+    db.ref('stores/' + storeId + '/products').orderByChild('barcode').equalTo(barcode).once('value', snap => {
+        let product = null;
+        let key = null;
+        snap.forEach(child => {
+            product = child.val();
+            key = child.key;
+        });
+        
+        if (product) {
+            editingProductKey = key;
+            document.getElementById('editBarcode').value = product.barcode;
+            document.getElementById('editName').value = product.name;
+            document.getElementById('editPrice').value = product.price;
+            document.getElementById('editDiscountPrice').value = product.discountPrice;
+            
+            resultDiv.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <div style="font-weight:bold; color:#1d6f2c;">✅ Товар найден</div>
+                        <div style="font-size:0.8rem; color:#7a8a9e;">Нажмите "Сохранить" для изменения или "Удалить" для удаления</div>
+                    </div>
+                    <div style="font-size:0.8rem; color:#3e5f7e;">ID: ${key}</div>
+                </div>
+            `;
+            showToast(`✅ Товар найден: ${product.name}`);
+        } else {
+            resultDiv.innerHTML = `
+                <div style="color:#b33a34; padding:8px;">
+                    ❌ Товар с штрихкодом ${barcode} не найден в магазине
+                </div>
+            `;
+            showToast(`❌ Товар не найден`, true);
+            clearProductEdit();
+        }
+        document.getElementById('searchProductBarcode').value = '';
+    });
+}
+
+function saveProductEdit() {
+    if (!editingProductKey) {
+        showToast('❌ Сначала найдите товар для редактирования', true);
+        return;
+    }
+    
+    const barcode = document.getElementById('editBarcode').value.trim();
+    const name = document.getElementById('editName').value.trim();
+    const price = parseFloat(document.getElementById('editPrice').value);
+    const discountPrice = parseFloat(document.getElementById('editDiscountPrice').value);
+    
+    if (!barcode || !name || isNaN(price) || price <= 0 || isNaN(discountPrice) || discountPrice <= 0) {
+        showToast('❌ Заполните все поля корректно!', true);
+        return;
+    }
+    
+    const updates = {
+        barcode: barcode,
+        name: name,
+        price: price,
+        discountPrice: discountPrice
+    };
+    
+    db.ref('stores/' + storeId + '/products/' + editingProductKey).update(updates).then(() => {
+        showToast(`✅ Товар "${name}" обновлён!`);
+        document.getElementById('productEditResult').innerHTML = `
+            <div style="color:#1d6f2c; padding:8px;">
+                ✅ Товар "${name}" успешно обновлён!
+            </div>
+        `;
+        editingProductKey = null;
+        clearProductEdit();
+    }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+}
+
+function deleteProduct() {
+    if (!editingProductKey) {
+        showToast('❌ Сначала найдите товар для удаления', true);
+        return;
+    }
+    
+    const name = document.getElementById('editName').value.trim();
+    if (!confirm(`Удалить товар "${name}"?`)) return;
+    
+    db.ref('stores/' + storeId + '/products/' + editingProductKey).remove().then(() => {
+        showToast(`🗑 Товар "${name}" удалён!`);
+        document.getElementById('productEditResult').innerHTML = `
+            <div style="color:#b33a34; padding:8px;">
+                🗑 Товар "${name}" удалён
+            </div>
+        `;
+        editingProductKey = null;
+        clearProductEdit();
+    }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+}
+
+function clearProductEdit() {
+    document.getElementById('editBarcode').value = '';
+    document.getElementById('editName').value = '';
+    document.getElementById('editPrice').value = '';
+    document.getElementById('editDiscountPrice').value = '';
+    editingProductKey = null;
+    setTimeout(() => {
+        document.getElementById('productEditResult').style.display = 'none';
+    }, 3000);
+}
+
 // ===== ВЕСОВЫЕ ТОВАРЫ =====
 function updateWeightProducts() {
     const category = document.getElementById('weightCategory').value;
@@ -56,7 +174,6 @@ function updateWeightProducts() {
         option.textContent = `${p} (${price} ₽/${unit})`;
         select.appendChild(option);
     });
-    
     updateWeightPrice();
 }
 
@@ -79,7 +196,7 @@ function addWeightProduct() {
     
     const unit = category === 'Выпечка' ? 'шт' : 'кг';
     const displayName = `${product} (${unit})`;
-    const finalPrice = currentClient ? price * 0.9 : price; // Скидка для клиентов с картой
+    const finalPrice = currentClient ? price * 0.9 : price;
     
     const existing = currentCart.find(item => item.name === displayName && item.isWeight);
     if (existing) {
@@ -167,7 +284,7 @@ function scanClient() {
     });
 }
 
-// ===== ОБНОВЛЕНИЕ ЦЕН В КОРЗИНЕ =====
+// ===== ОСТАЛЬНЫЕ ФУНКЦИИ (ОБНОВЛЕНИЕ ЦЕН, КОРЗИНА, ОПЛАТА) =====
 function updateCartPricesWithDiscount() {
     if (!currentClient) return;
     
@@ -212,7 +329,6 @@ function updateCartPricesWithoutDiscount() {
     updateCartUI();
 }
 
-// ===== ДОБАВЛЕНИЕ ТОВАРА СО ШТРИХКОДОМ =====
 function addToCart() {
     const barcode = document.getElementById('cartBarcodeInput').value.trim();
     const quantity = parseInt(document.getElementById('cartQuantity').value) || 1;
@@ -258,7 +374,6 @@ function addToCart() {
     });
 }
 
-// ===== КОРЗИНА =====
 function updateCartUI() {
     const container = document.getElementById('cartList');
     cartTotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -316,7 +431,6 @@ function clearCart() {
     showToast('🗑 Корзина очищена');
 }
 
-// ===== ОСТАЛЬНЫЕ ФУНКЦИИ =====
 function selectPayment(method) {
     selectedPayment = method;
     document.querySelectorAll('.payment-btn').forEach(b => b.style.background = '#eef2f8');
