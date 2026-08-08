@@ -6,6 +6,8 @@ if (!user || user.role !== 'client') {
 }
 
 let currentBarcodeColor = '#000000';
+let selectedStoreId = null;
+let selectedStoreName = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     // Информация о клиенте
@@ -32,6 +34,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('nicknameStatus').innerHTML = `✅ Никнейм установлен: ${user.nickname}`;
         document.getElementById('nicknameStatus').style.color = '#1d6f2c';
     }
+    
+    // Загружаем магазины для выбора
+    loadClientStores();
 });
 
 // ===== ОБНОВЛЕНИЕ ИНФОРМАЦИИ О КЛИЕНТЕ =====
@@ -44,9 +49,120 @@ function updateClientInfo() {
             <span class="badge">🎫 Карта: ${user.cardNumber}</span><br>
             <span style="font-size:0.8rem;">📱 ${user.phone}</span><br>
             <span style="font-size:0.8rem;color:#3e5f7e;">✅ Единая карта для всех магазинов</span>
+            ${selectedStoreName ? `<br><span style="font-size:0.8rem;color:#1d6f2c;">🏪 Выбран магазин: ${selectedStoreName}</span>` : ''}
         </div>
     `;
     document.getElementById('clientName').innerHTML = `👤 ${displayName}`;
+}
+
+// ===== ВЫБОР МАГАЗИНА =====
+function loadClientStores() {
+    const select = document.getElementById('clientStoreSelector');
+    select.innerHTML = '<option value="">Загрузка магазинов...</option>';
+    
+    db.ref('stores').once('value', snap => {
+        const stores = snap.val();
+        select.innerHTML = '<option value="">Выберите магазин</option>';
+        if (stores) {
+            for (let key in stores) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = stores[key].name;
+                if (key === user.storeId) {
+                    option.selected = true;
+                    selectedStoreId = key;
+                    selectedStoreName = stores[key].name;
+                    document.getElementById('selectedStoreDisplay').innerHTML = `✅ Текущий магазин: ${selectedStoreName}`;
+                }
+                select.appendChild(option);
+            }
+        }
+        updateClientInfo();
+    });
+}
+
+function changeClientStore() {
+    const select = document.getElementById('clientStoreSelector');
+    const storeId = select.value;
+    if (!storeId) {
+        document.getElementById('selectedStoreDisplay').innerHTML = '';
+        selectedStoreId = null;
+        selectedStoreName = null;
+        updateClientInfo();
+        return;
+    }
+    
+    db.ref('stores/' + storeId).once('value', snap => {
+        const store = snap.val();
+        if (store) {
+            selectedStoreId = storeId;
+            selectedStoreName = store.name;
+            document.getElementById('selectedStoreDisplay').innerHTML = `✅ Выбран магазин: ${selectedStoreName}`;
+            updateClientInfo();
+            showToast(`🏪 Выбран магазин: ${selectedStoreName}`);
+            
+            // Очищаем результат сканера
+            document.getElementById('priceResult').style.display = 'none';
+        }
+    });
+}
+
+// ===== СКАНЕР ЦЕН =====
+function scanPrice() {
+    const barcode = document.getElementById('priceScannerInput').value.trim();
+    if (!barcode) {
+        showToast('❌ Введите или отсканируйте штрихкод', true);
+        return;
+    }
+    
+    if (!selectedStoreId) {
+        showToast('❌ Сначала выберите магазин', true);
+        return;
+    }
+    
+    const resultDiv = document.getElementById('priceResult');
+    const contentDiv = document.getElementById('priceResultContent');
+    
+    resultDiv.style.display = 'block';
+    contentDiv.innerHTML = '<div class="loading-spinner">Поиск товара...</div>';
+    
+    db.ref('stores/' + selectedStoreId + '/products').orderByChild('barcode').equalTo(barcode).once('value', snap => {
+        let product = null;
+        snap.forEach(child => {
+            product = child.val();
+        });
+        
+        if (product) {
+            contentDiv.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <div style="font-size:1.2rem; font-weight:bold;">${product.name}</div>
+                        <div style="font-size:0.8rem; color:#7a8a9e;">Штрихкод: ${product.barcode}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:1.5rem; font-weight:bold; color:#1a1a2e;">${product.price.toFixed(2)} ₽</div>
+                        <div style="font-size:0.8rem; color:#1d6f2c;">💎 По карте: ${product.discountPrice.toFixed(2)} ₽</div>
+                        <div style="font-size:0.7rem; color:#7a8a9e;">🏪 ${selectedStoreName}</div>
+                    </div>
+                </div>
+                <div style="margin-top:12px; padding-top:12px; border-top:1px solid #eef2f8; font-size:0.8rem; color:#3e5f7e;">
+                    💡 При предъявлении карты цена будет ${product.discountPrice.toFixed(2)} ₽
+                </div>
+            `;
+            showToast(`✅ Товар найден: ${product.name}`);
+        } else {
+            contentDiv.innerHTML = `
+                <div style="text-align:center; color:#b33a34; padding:12px;">
+                    <div style="font-size:2rem;">❌</div>
+                    <div style="font-weight:bold; margin-top:8px;">Товар не найден</div>
+                    <div style="font-size:0.8rem; color:#7a8a9e;">В магазине "${selectedStoreName}" нет товара с штрихкодом ${barcode}</div>
+                </div>
+            `;
+            showToast(`❌ Товар не найден`, true);
+        }
+        
+        document.getElementById('priceScannerInput').value = '';
+    });
 }
 
 // ===== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК КЛИЕНТА =====
@@ -72,16 +188,13 @@ function saveNickname() {
     db.ref('clients/' + clientId).update({
         nickname: nickname
     }).then(() => {
-        // Обновляем локальные данные
         user.nickname = nickname;
         localStorage.setItem('shop_user', JSON.stringify(user));
         
-        // Обновляем отображение
         updateClientInfo();
         document.getElementById('nicknameStatus').innerHTML = `✅ Никнейм сохранён: ${nickname}`;
         document.getElementById('nicknameStatus').style.color = '#1d6f2c';
         
-        // ОБНОВЛЯЕМ ИСТОРИЮ КАССЫ - меняем старый никнейм на новый
         updateCashierHistoryNickname(clientId, oldNickname, nickname);
         
         showToast(`✅ Никнейм "${nickname}" сохранён!`);
@@ -90,35 +203,23 @@ function saveNickname() {
     });
 }
 
-// ===== ОБНОВЛЕНИЕ НИКНЕЙМА В ИСТОРИИ КАССЫ =====
+// ===== ОБНОВЛЕНИЕ НИКНЕЙМА В ИСТОРИИ =====
 function updateCashierHistoryNickname(clientId, oldNickname, newNickname) {
-    // Ищем клиента по ID в истории кассы
     db.ref('cashier_history').once('value', snap => {
         const history = snap.val();
         if (!history) return;
         
         const updates = {};
-        let found = false;
-        
         for (let key in history) {
             const item = history[key];
-            // Проверяем, что запись принадлежит этому клиенту (по номеру телефона или по старому никнейму)
             if (item.clientPhone === user.phone || item.clientName === oldNickname || 
                 (item.clientId && item.clientId === clientId)) {
-                // Обновляем имя клиента в истории
                 updates['cashier_history/' + key + '/clientName'] = newNickname;
-                // Добавляем ID клиента для связи, если его нет
-                if (!item.clientId) {
-                    updates['cashier_history/' + key + '/clientId'] = clientId;
-                }
-                if (!item.clientPhone) {
-                    updates['cashier_history/' + key + '/clientPhone'] = user.phone;
-                }
-                found = true;
+                if (!item.clientId) updates['cashier_history/' + key + '/clientId'] = clientId;
+                if (!item.clientPhone) updates['cashier_history/' + key + '/clientPhone'] = user.phone;
             }
         }
         
-        // Также обновляем в истории магазина
         db.ref('stores/' + user.storeId + '/history').once('value', snap2 => {
             const storeHistory = snap2.val();
             if (!storeHistory) return;
@@ -129,28 +230,20 @@ function updateCashierHistoryNickname(clientId, oldNickname, newNickname) {
                 if (item.clientPhone === user.phone || item.clientName === oldNickname || 
                     (item.clientId && item.clientId === clientId)) {
                     storeUpdates['stores/' + user.storeId + '/history/' + key + '/clientName'] = newNickname;
-                    if (!item.clientId) {
-                        storeUpdates['stores/' + user.storeId + '/history/' + key + '/clientId'] = clientId;
-                    }
-                    if (!item.clientPhone) {
-                        storeUpdates['stores/' + user.storeId + '/history/' + key + '/clientPhone'] = user.phone;
-                    }
-                    found = true;
+                    if (!item.clientId) storeUpdates['stores/' + user.storeId + '/history/' + key + '/clientId'] = clientId;
+                    if (!item.clientPhone) storeUpdates['stores/' + user.storeId + '/history/' + key + '/clientPhone'] = user.phone;
                 }
             }
             
-            // Применяем все обновления
             const allUpdates = { ...updates, ...storeUpdates };
             if (Object.keys(allUpdates).length > 0) {
-                db.ref().update(allUpdates).then(() => {
-                    console.log('✅ История обновлена с новым никнеймом:', newNickname);
-                }).catch(err => console.error('Ошибка обновления истории:', err));
+                db.ref().update(allUpdates);
             }
         });
     });
 }
 
-// ===== ГЕНЕРАЦИЯ EAN-13 ШТРИХКОДА =====
+// ===== ГЕНЕРАЦИЯ EAN-13 =====
 function generateEAN13(cardNumber, color) {
     try {
         var canvas = document.getElementById('barcodeCanvas');
@@ -169,8 +262,6 @@ function generateEAN13(cardNumber, color) {
         
         document.getElementById('barcodeNumber').textContent = ean13;
         document.getElementById('barcodeNumber').style.color = fgColor;
-        
-        console.log('✅ EAN-13 сгенерирован:', ean13);
     } catch(e) {
         console.error('Ошибка генерации EAN-13:', e);
         document.getElementById('barcodeNumber').textContent = cardNumber || 'Ошибка';
@@ -203,7 +294,6 @@ function loadClientHistory() {
     
     const clientId = user.id;
     
-    // Слушаем изменения истории
     db.ref('clients/' + clientId + '/history').on('value', snap => {
         const history = snap.val() || [];
         if (history.length === 0) {
@@ -211,7 +301,6 @@ function loadClientHistory() {
             return;
         }
         let html = '';
-        // Показываем последние 20 записей (сначала новые)
         const reversed = history.slice().reverse();
         const displayHistory = reversed.slice(0, 20);
         
@@ -245,7 +334,6 @@ function loadClientHistory() {
         container.innerHTML = '<div class="empty-state">❌ Ошибка загрузки истории</div>';
     });
     
-    // Слушаем изменения баланса
     db.ref('clients/' + clientId + '/balance').on('value', snap => {
         const balance = snap.val() || 0;
         document.getElementById('clientBalance').innerText = balance;
