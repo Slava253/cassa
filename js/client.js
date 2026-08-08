@@ -8,6 +8,8 @@ if (!user || user.role !== 'client') {
 let currentBarcodeColor = '#000000';
 let selectedStoreId = null;
 let selectedStoreName = null;
+let scannerInitialized = false;
+let codeReader = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     // Информация о клиенте
@@ -20,26 +22,18 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('profileNickname').value = user.nickname || '';
     document.getElementById('profileCardNumber').value = user.cardNumber || '';
     
-    // Обновляем информацию в карточке
     updateClientInfo();
-    
-    // Генерируем штрихкод
     generateEAN13(user.cardNumber);
-    
-    // Загружаем историю
     loadClientHistory();
+    loadClientStores();
     
-    // Показываем статус никнейма
     if (user.nickname) {
         document.getElementById('nicknameStatus').innerHTML = `✅ Никнейм установлен: ${user.nickname}`;
         document.getElementById('nicknameStatus').style.color = '#1d6f2c';
     }
-    
-    // Загружаем магазины для выбора
-    loadClientStores();
 });
 
-// ===== ОБНОВЛЕНИЕ ИНФОРМАЦИИ О КЛИЕНТЕ =====
+// ===== ОБНОВЛЕНИЕ ИНФОРМАЦИИ =====
 function updateClientInfo() {
     const displayName = user.nickname || user.fullName;
     document.getElementById('clientInfo').innerHTML = `
@@ -55,7 +49,7 @@ function updateClientInfo() {
     document.getElementById('clientName').innerHTML = `👤 ${displayName}`;
 }
 
-// ===== ВЫБОР МАГАЗИНА =====
+// ===== ЗАГРУЗКА МАГАЗИНОВ =====
 function loadClientStores() {
     const select = document.getElementById('clientStoreSelector');
     select.innerHTML = '<option value="">Загрузка магазинов...</option>';
@@ -63,7 +57,9 @@ function loadClientStores() {
     db.ref('stores').once('value', snap => {
         const stores = snap.val();
         select.innerHTML = '<option value="">Выберите магазин</option>';
+        
         if (stores) {
+            let hasStore = false;
             for (let key in stores) {
                 const option = document.createElement('option');
                 option.value = key;
@@ -73,11 +69,30 @@ function loadClientStores() {
                     selectedStoreId = key;
                     selectedStoreName = stores[key].name;
                     document.getElementById('selectedStoreDisplay').innerHTML = `✅ Текущий магазин: ${selectedStoreName}`;
+                    hasStore = true;
                 }
                 select.appendChild(option);
             }
+            
+            if (!hasStore && stores) {
+                const firstKey = Object.keys(stores)[0];
+                select.value = firstKey;
+                selectedStoreId = firstKey;
+                selectedStoreName = stores[firstKey].name;
+                document.getElementById('selectedStoreDisplay').innerHTML = `✅ Выбран магазин: ${selectedStoreName}`;
+            }
+            
+            // После загрузки магазинов показываем ассортимент
+            loadStoreProducts();
+        } else {
+            select.innerHTML = '<option value="">Нет магазинов</option>';
         }
+        
         updateClientInfo();
+    }).catch(err => {
+        console.error('Ошибка загрузки магазинов:', err);
+        select.innerHTML = '<option value="">Ошибка загрузки</option>';
+        showToast('❌ Ошибка загрузки магазинов', true);
     });
 }
 
@@ -89,6 +104,7 @@ function changeClientStore() {
         selectedStoreId = null;
         selectedStoreName = null;
         updateClientInfo();
+        document.getElementById('storeProductsList').innerHTML = '<div class="empty-state">Выберите магазин</div>';
         return;
     }
     
@@ -100,14 +116,57 @@ function changeClientStore() {
             document.getElementById('selectedStoreDisplay').innerHTML = `✅ Выбран магазин: ${selectedStoreName}`;
             updateClientInfo();
             showToast(`🏪 Выбран магазин: ${selectedStoreName}`);
-            
-            // Очищаем результат сканера
+            loadStoreProducts();
             document.getElementById('priceResult').style.display = 'none';
         }
     });
 }
 
-// ===== СКАНЕР ЦЕН =====
+// ===== ПРОСМОТР ТОВАРОВ В МАГАЗИНЕ =====
+function loadStoreProducts() {
+    const container = document.getElementById('storeProductsList');
+    
+    if (!selectedStoreId) {
+        container.innerHTML = '<div class="empty-state">Выберите магазин для просмотра товаров</div>';
+        return;
+    }
+    
+    container.innerHTML = '<div class="loading-spinner">Загрузка товаров...</div>';
+    
+    db.ref('stores/' + selectedStoreId + '/products').once('value', snap => {
+        const products = snap.val();
+        if (!products) {
+            container.innerHTML = '<div class="empty-state">В этом магазине пока нет товаров</div>';
+            return;
+        }
+        
+        let html = '';
+        let count = 0;
+        for (let key in products) {
+            const p = products[key];
+            count++;
+            html += `
+                <div class="history-item">
+                    <div>
+                        <strong>${p.name}</strong>
+                        <span style="font-size:0.7rem; color:#7a8a9e; display:block;">Штрихкод: ${p.barcode}</span>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:bold;">${p.price.toFixed(2)} ₽</div>
+                        <div style="font-size:0.7rem; color:#1d6f2c;">💎 По карте: ${p.discountPrice.toFixed(2)} ₽</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        container.innerHTML = `
+            <div style="margin-bottom:8px; font-size:0.8rem; color:#7a8a9e;">Всего товаров: ${count}</div>
+            ${html}
+        `;
+    });
+}
+
+// ===== СКАНЕР ЦЕН (ВРУЧНУЮ) =====
 function scanPrice() {
     const barcode = document.getElementById('priceScannerInput').value.trim();
     if (!barcode) {
@@ -165,16 +224,97 @@ function scanPrice() {
     });
 }
 
-// ===== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК КЛИЕНТА =====
+// ===== СКАНЕР ЧЕРЕЗ КАМЕРУ =====
+async function startCameraScanner() {
+    const container = document.getElementById('scannerContainer');
+    const video = document.getElementById('scannerVideo');
+    const resultDiv = document.getElementById('scannerResult');
+    const resultText = document.getElementById('scannerResultText');
+    
+    container.style.display = 'block';
+    resultDiv.style.display = 'none';
+    
+    try {
+        codeReader = new ZXing.BrowserMultiFormatReader();
+        const videoInputDevices = await codeReader.listVideoInputDevices();
+        
+        if (videoInputDevices.length === 0) {
+            showToast('❌ Камера не найдена', true);
+            container.style.display = 'none';
+            return;
+        }
+        
+        const selectedDeviceId = videoInputDevices[0].deviceId;
+        
+        codeReader.decodeFromVideoDevice(selectedDeviceId, video, (result, err) => {
+            if (result) {
+                resultDiv.style.display = 'block';
+                resultText.textContent = `✅ Найден штрихкод: ${result.text}`;
+                resultText.style.color = '#4CAF50';
+                
+                document.getElementById('priceScannerInput').value = result.text;
+                scanPrice();
+                
+                setTimeout(() => {
+                    stopCameraScanner();
+                }, 2000);
+            }
+            if (err && !(err instanceof ZXing.NotFoundException)) {
+                console.error('Ошибка сканирования:', err);
+            }
+        });
+        
+        scannerInitialized = true;
+        showToast('📷 Сканирование начато, наведите камеру на штрихкод');
+        
+    } catch (error) {
+        console.error('Ошибка запуска камеры:', error);
+        showToast('❌ Не удалось запустить камеру: ' + error.message, true);
+        container.style.display = 'none';
+    }
+}
+
+function stopCameraScanner() {
+    const container = document.getElementById('scannerContainer');
+    const video = document.getElementById('scannerVideo');
+    
+    if (codeReader) {
+        try {
+            codeReader.reset();
+        } catch(e) {}
+        codeReader = null;
+    }
+    
+    if (video.srcObject) {
+        const tracks = video.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+        video.srcObject = null;
+    }
+    
+    container.style.display = 'none';
+    scannerInitialized = false;
+    showToast('❌ Сканер остановлен');
+}
+
+// ===== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК =====
 function switchClientTab(tab) {
-    document.querySelectorAll('#client-profile, #client-card, #client-history').forEach(el => el.style.display = 'none');
+    if (scannerInitialized) {
+        stopCameraScanner();
+    }
+    
+    document.querySelectorAll('#client-profile, #client-card, #client-history, #client-shop').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.tab-btn[data-tab^="client-"]').forEach(btn => btn.classList.remove('active'));
     
     document.getElementById('client-' + tab).style.display = 'block';
     document.querySelector(`.tab-btn[data-tab="client-${tab}"]`).classList.add('active');
+    
+    // Если перешли на вкладку магазина, обновляем список товаров
+    if (tab === 'shop') {
+        loadStoreProducts();
+    }
 }
 
-// ===== СОХРАНЕНИЕ НИКНЕЙМА =====
+// ===== ОСТАЛЬНЫЕ ФУНКЦИИ =====
 function saveNickname() {
     const nickname = document.getElementById('profileNickname').value.trim();
     if (!nickname) {
@@ -190,68 +330,21 @@ function saveNickname() {
     }).then(() => {
         user.nickname = nickname;
         localStorage.setItem('shop_user', JSON.stringify(user));
-        
         updateClientInfo();
         document.getElementById('nicknameStatus').innerHTML = `✅ Никнейм сохранён: ${nickname}`;
         document.getElementById('nicknameStatus').style.color = '#1d6f2c';
-        
-        updateCashierHistoryNickname(clientId, oldNickname, nickname);
-        
         showToast(`✅ Никнейм "${nickname}" сохранён!`);
     }).catch(err => {
         showToast('❌ Ошибка: ' + err.message, true);
     });
 }
 
-// ===== ОБНОВЛЕНИЕ НИКНЕЙМА В ИСТОРИИ =====
-function updateCashierHistoryNickname(clientId, oldNickname, newNickname) {
-    db.ref('cashier_history').once('value', snap => {
-        const history = snap.val();
-        if (!history) return;
-        
-        const updates = {};
-        for (let key in history) {
-            const item = history[key];
-            if (item.clientPhone === user.phone || item.clientName === oldNickname || 
-                (item.clientId && item.clientId === clientId)) {
-                updates['cashier_history/' + key + '/clientName'] = newNickname;
-                if (!item.clientId) updates['cashier_history/' + key + '/clientId'] = clientId;
-                if (!item.clientPhone) updates['cashier_history/' + key + '/clientPhone'] = user.phone;
-            }
-        }
-        
-        db.ref('stores/' + user.storeId + '/history').once('value', snap2 => {
-            const storeHistory = snap2.val();
-            if (!storeHistory) return;
-            
-            const storeUpdates = {};
-            for (let key in storeHistory) {
-                const item = storeHistory[key];
-                if (item.clientPhone === user.phone || item.clientName === oldNickname || 
-                    (item.clientId && item.clientId === clientId)) {
-                    storeUpdates['stores/' + user.storeId + '/history/' + key + '/clientName'] = newNickname;
-                    if (!item.clientId) storeUpdates['stores/' + user.storeId + '/history/' + key + '/clientId'] = clientId;
-                    if (!item.clientPhone) storeUpdates['stores/' + user.storeId + '/history/' + key + '/clientPhone'] = user.phone;
-                }
-            }
-            
-            const allUpdates = { ...updates, ...storeUpdates };
-            if (Object.keys(allUpdates).length > 0) {
-                db.ref().update(allUpdates);
-            }
-        });
-    });
-}
-
-// ===== ГЕНЕРАЦИЯ EAN-13 =====
 function generateEAN13(cardNumber, color) {
     try {
         var canvas = document.getElementById('barcodeCanvas');
         if (!canvas) return;
-        
         var fgColor = color || currentBarcodeColor || '#000000';
         var ean13 = EAN13.generate(cardNumber);
-        
         EAN13.draw(canvas, ean13, {
             width: 420,
             height: 190,
@@ -259,7 +352,6 @@ function generateEAN13(cardNumber, color) {
             bgColor: '#ffffff',
             fgColor: fgColor
         });
-        
         document.getElementById('barcodeNumber').textContent = ean13;
         document.getElementById('barcodeNumber').style.color = fgColor;
     } catch(e) {
@@ -268,18 +360,15 @@ function generateEAN13(cardNumber, color) {
     }
 }
 
-// ===== СМЕНА ЦВЕТА =====
 function changeBarcodeColor(color) {
     currentBarcodeColor = color;
     generateEAN13(user.cardNumber, color);
     showToast('🎨 Цвет штрихкода изменён');
 }
 
-// ===== СКАЧАТЬ ШТРИХКОД =====
 function downloadBarcode() {
     var canvas = document.getElementById('barcodeCanvas');
     if (!canvas) return;
-    
     var link = document.createElement('a');
     link.download = 'barcode-' + user.cardNumber + '.png';
     link.href = canvas.toDataURL('image/png');
@@ -287,11 +376,9 @@ function downloadBarcode() {
     showToast('💾 Штрихкод сохранён');
 }
 
-// ===== ИСТОРИЯ =====
 function loadClientHistory() {
     const container = document.getElementById('clientHistory');
     container.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
-    
     const clientId = user.id;
     
     db.ref('clients/' + clientId + '/history').on('value', snap => {
@@ -327,11 +414,7 @@ function loadClientHistory() {
         if (history.length > 20) {
             html += `<div style="text-align:center; padding:12px; color:#7a8a9e; font-size:0.8rem;">Показаны последние 20 покупок из ${history.length}</div>`;
         }
-        
         container.innerHTML = html;
-    }, error => {
-        console.error('Ошибка загрузки истории:', error);
-        container.innerHTML = '<div class="empty-state">❌ Ошибка загрузки истории</div>';
     });
     
     db.ref('clients/' + clientId + '/balance').on('value', snap => {
@@ -340,7 +423,15 @@ function loadClientHistory() {
         const saved = JSON.parse(localStorage.getItem('shop_user'));
         saved.balance = balance;
         localStorage.setItem('shop_user', JSON.stringify(saved));
-    }, error => {
-        console.error('Ошибка загрузки баланса:', error);
     });
+}
+
+function showToast(msg, isError = false) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    toast.style.background = isError ? '#b33a34' : '#1d6f2c';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.style.display = 'none', 3000);
 }
