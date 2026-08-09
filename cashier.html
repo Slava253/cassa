@@ -54,9 +54,34 @@
                 <div id="discountInfo" style="margin-top:8px; font-weight:bold; color:#1d6f2c;"></div>
             </div>
 
+            <!-- ДОБАВЛЕНИЕ ТОВАРА В СИСТЕМУ -->
+            <div class="card" style="border: 3px solid #f6b83d; background: #fffdf5;">
+                <div class="card-title" style="color: #d4a13e;">📦 ДОБАВИТЬ ТОВАР В СИСТЕМУ</div>
+                <div style="display:flex; flex-wrap:wrap; gap:12px;">
+                    <div class="form-group" style="flex:1; min-width:150px;">
+                        <label>🔲 Штрихкод</label>
+                        <input type="text" id="newProductBarcode" placeholder="4601234567890" style="font-size:1.1rem; font-family:monospace;">
+                    </div>
+                    <div class="form-group" style="flex:2; min-width:180px;">
+                        <label>📝 Название товара</label>
+                        <input type="text" id="newProductName" placeholder="Молоко 'Деревенское' 1л">
+                    </div>
+                    <div class="form-group" style="flex:1; min-width:120px;">
+                        <label>💰 Обычная цена (₽)</label>
+                        <input type="number" id="newProductPrice" step="0.01" placeholder="89.90">
+                    </div>
+                    <div class="form-group" style="flex:1; min-width:120px;">
+                        <label>💎 Цена со скидкой (₽)</label>
+                        <input type="number" id="newProductDiscountPrice" step="0.01" placeholder="79.90">
+                    </div>
+                </div>
+                <button onclick="addNewProduct()" class="btn-success" style="width:100%; margin-top:8px; padding:14px; font-size:1.1rem;">➕ ДОБАВИТЬ ТОВАР В МАГАЗИН</button>
+                <div id="addProductStatus" style="margin-top:8px; font-size:0.85rem; color:#7a8a9e;"></div>
+            </div>
+
             <!-- Управление товарами -->
             <div class="card" style="border: 2px solid #d4a13e;">
-                <div class="card-title">📦 Управление товарами</div>
+                <div class="card-title">🔧 Управление товарами</div>
                 <div style="margin-bottom:12px;">
                     <label style="font-weight:600; font-size:0.85rem;">🔍 Поиск товара по штрихкоду</label>
                     <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:4px;">
