@@ -86,10 +86,16 @@
             <div id="client-profile" class="tab-content active">
                 <div class="card">
                     <div class="card-title">👤 Профиль</div>
+                    
+                    <!-- Поле телефона - теперь редактируемое -->
                     <div class="form-group">
                         <label>📱 Номер телефона</label>
-                        <input type="text" id="profilePhone" readonly style="background:#f0f4f9; color:#1a1a2e; font-weight:500;">
+                        <input type="tel" id="profilePhone" placeholder="+7 900 123-45-67" style="font-size:1rem;">
                     </div>
+                    
+                    <!-- Кнопка сохранения телефона -->
+                    <button onclick="savePhoneNumber()" class="btn-success" style="width:100%; margin-bottom:16px;">💾 Сохранить номер телефона</button>
+                    
                     <div class="form-group">
                         <label>✏️ Никнейм</label>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
@@ -98,6 +104,7 @@
                         </div>
                         <div id="nicknameStatus" style="margin-top:8px; font-size:0.85rem; color:#7a8a9e;"></div>
                     </div>
+                    
                     <div class="form-group" style="margin-top:16px; padding-top:16px; border-top:2px solid #eef2f8;">
                         <label>💳 Номер карты</label>
                         <input type="text" id="profileCardNumber" readonly style="background:#f0f4f9; color:#1a1a2e; font-weight:500; font-family:monospace;">
