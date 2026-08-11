@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="img/icon-192.png">
-    <title>Магазин | Моя карта</title>
+    <title>У дома | Моя карта</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/mobile.css">
@@ -17,7 +17,7 @@
     <div class="app-container">
         <div class="header">
             <div class="logo-area">
-                <h1>👤 Магазин</h1>
+                <h1>🏪 У дома</h1>
                 <p id="clientStoreDisplay">Личный кабинет</p>
             </div>
             <div class="user-status">
@@ -77,6 +77,7 @@
             <!-- Вкладки -->
             <div class="tabs" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
                 <button class="tab-btn active" data-tab="client-profile" onclick="switchClientTab('profile')">👤 Профиль</button>
+                <button class="tab-btn" data-tab="client-promotions" onclick="switchClientTab('promotions')">🎉 Акции</button>
                 <button class="tab-btn" data-tab="client-shop" onclick="switchClientTab('shop')">🏪 Магазин</button>
                 <button class="tab-btn" data-tab="client-card" onclick="switchClientTab('card')">📱 Карта</button>
                 <button class="tab-btn" data-tab="client-history" onclick="switchClientTab('history')">📜 История</button>
@@ -86,14 +87,10 @@
             <div id="client-profile" class="tab-content active">
                 <div class="card">
                     <div class="card-title">👤 Профиль</div>
-                    
-                    <!-- Поле телефона - теперь редактируемое -->
                     <div class="form-group">
                         <label>📱 Номер телефона</label>
                         <input type="tel" id="profilePhone" placeholder="+7 900 123-45-67" style="font-size:1rem;">
                     </div>
-                    
-                    <!-- Кнопка сохранения телефона -->
                     <button onclick="savePhoneNumber()" class="btn-success" style="width:100%; margin-bottom:16px;">💾 Сохранить номер телефона</button>
                     
                     <div class="form-group">
@@ -112,6 +109,14 @@
                 </div>
             </div>
 
+            <!-- Акции -->
+            <div id="client-promotions" class="tab-content" style="display:none;">
+                <div class="card">
+                    <div class="card-title">🎉 Акции</div>
+                    <div id="clientPromotionsList"><div class="loading-spinner">Загрузка акций...</div></div>
+                </div>
+            </div>
+
             <!-- Магазин -->
             <div id="client-shop" class="tab-content" style="display:none;">
                 <div class="card">
@@ -124,24 +129,20 @@
             <div id="client-card" class="tab-content" style="display:none;">
                 <div class="card">
                     <div class="card-title">📱 Ваш штрихкод EAN-13</div>
-                    
                     <div style="margin-bottom:16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-                        <label style="font-weight:600; font-size:0.85rem;">Цвет штрихкода:</label>
+                        <label style="font-weight:600; font-size:0.85rem;">Цвет:</label>
                         <button onclick="changeBarcodeColor('#000000')" class="color-btn" style="background:#000000; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
                         <button onclick="changeBarcodeColor('#1a1a2e')" class="color-btn" style="background:#1a1a2e; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
                         <button onclick="changeBarcodeColor('#2d6a4f')" class="color-btn" style="background:#2d6a4f; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
-                        <button onclick="changeBarcodeColor('#1a237e')" class="color-btn" style="background:#1a237e; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
-                        <button onclick="changeBarcodeColor('#b71c1c')" class="color-btn" style="background:#b71c1c; width:40px; height:40px; border-radius:50%; border:2px solid #ccc;"></button>
                         <button onclick="changeBarcodeColor('#ffffff')" class="color-btn" style="background:#ffffff; width:40px; height:40px; border-radius:50%; border:2px solid #333; color:#333;">⬜</button>
                     </div>
-
                     <div style="text-align:center; padding:20px; background:white; border-radius:20px; border:2px solid #dae2ec;">
                         <canvas id="barcodeCanvas" style="max-width:100%; margin:0 auto; background:#ffffff; border-radius:8px;"></canvas>
                         <p id="barcodeNumber" style="font-size:1rem; font-family:monospace; color:#1a1a2e; margin-top:10px; letter-spacing:3px; font-weight:bold;"></p>
-                        <p style="font-size:0.8rem; color:#7a8a9e; margin-top:8px;">Покажите этот штрихкод кассиру в любом магазине</p>
+                        <p style="font-size:0.8rem; color:#7a8a9e; margin-top:8px;">Покажите этот штрихкод кассиру</p>
                         <p style="font-size:0.7rem; color:#3e5f7e; margin-top:4px;">✅ Единая карта для всех магазинов</p>
                         <div style="margin-top:12px;">
-                            <button onclick="downloadBarcode()" class="btn-success" style="font-size:0.85rem; padding:8px 20px;">💾 Скачать штрихкод</button>
+                            <button onclick="downloadBarcode()" class="btn-success" style="font-size:0.85rem; padding:8px 20px;">💾 Скачать</button>
                         </div>
                     </div>
                 </div>
