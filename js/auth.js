@@ -16,6 +16,7 @@ function adminLogin() {
 function cashierLogin() {
     const storeId = document.getElementById('cashierStoreSelect').value;
     const cardNumber = document.getElementById('cashierCardInput').value.trim();
+    const password = document.getElementById('cashierPasswordInput').value.trim();
     
     if (!storeId) {
         showToast('❌ Выберите магазин', true);
@@ -25,15 +26,23 @@ function cashierLogin() {
         showToast('❌ Введите номер карты кассира', true);
         return;
     }
+    if (!password) {
+        showToast('❌ Введите пароль', true);
+        return;
+    }
     
+    // Ищем кассира по номеру карты и паролю в выбранном магазине
     db.ref('stores/' + storeId + '/cashiers').orderByChild('cardNumber').equalTo(cardNumber).once('value', snap => {
         const cashiers = snap.val();
         let found = null;
         let foundKey = null;
         for (let key in cashiers) {
-            found = cashiers[key];
-            foundKey = key;
-            break;
+            const c = cashiers[key];
+            if (c.cardNumber === cardNumber && c.password === password) {
+                found = c;
+                foundKey = key;
+                break;
+            }
         }
         
         if (found) {
@@ -50,7 +59,7 @@ function cashierLogin() {
                 window.location.href = 'cashier.html';
             });
         } else {
-            showToast('❌ Кассир с таким номером карты не найден', true);
+            showToast('❌ Неверный номер карты или пароль', true);
         }
     });
 }
