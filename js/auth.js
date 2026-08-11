@@ -15,29 +15,28 @@ function adminLogin() {
 
 function cashierLogin() {
     const storeId = document.getElementById('cashierStoreSelect').value;
-    const login = document.getElementById('cashierLoginInput').value.trim();
-    const password = document.getElementById('cashierPasswordInput').value.trim();
+    const cardNumber = document.getElementById('cashierCardInput').value.trim();
     
     if (!storeId) {
         showToast('❌ Выберите магазин', true);
         return;
     }
-    if (!login || !password) {
-        showToast('❌ Введите логин и пароль', true);
+    if (!cardNumber) {
+        showToast('❌ Введите номер карты кассира', true);
         return;
     }
     
-    db.ref('stores/' + storeId + '/cashiers').once('value', snap => {
+    // Ищем кассира по номеру карты в выбранном магазине
+    db.ref('stores/' + storeId + '/cashiers').orderByChild('cardNumber').equalTo(cardNumber).once('value', snap => {
         const cashiers = snap.val();
         let found = null;
         let foundKey = null;
         for (let key in cashiers) {
-            if (cashiers[key].login === login && cashiers[key].password === password) {
-                found = cashiers[key];
-                foundKey = key;
-                break;
-            }
+            found = cashiers[key];
+            foundKey = key;
+            break;
         }
+        
         if (found) {
             db.ref('stores/' + storeId).once('value', snap2 => {
                 const store = snap2.val();
@@ -52,7 +51,7 @@ function cashierLogin() {
                 window.location.href = 'cashier.html';
             });
         } else {
-            showToast('❌ Неверный логин или пароль', true);
+            showToast('❌ Кассир с таким номером карты не найден', true);
         }
     });
 }
@@ -67,6 +66,13 @@ function clientLogin() {
     }
     if (!phone) {
         showToast('❌ Введите номер телефона', true);
+        return;
+    }
+    
+    // Очищаем телефон от лишних символов для поиска
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length < 10) {
+        showToast('❌ Введите корректный номер телефона (не менее 10 цифр)', true);
         return;
     }
     
@@ -86,7 +92,6 @@ function clientLogin() {
         }
         
         if (found) {
-            // Клиент найден
             db.ref('stores/' + storeId).once('value', snap2 => {
                 const store = snap2.val();
                 const user = { 
@@ -100,41 +105,7 @@ function clientLogin() {
                 window.location.href = 'client.html';
             });
         } else {
-            // Клиент не найден - СОЗДАЁМ НОВУЮ КАРТУ АВТОМАТИЧЕСКИ
-            showToast('🔄 Создаём новую карту...');
-            
-            // Генерируем уникальный номер карты на основе телефона
-            const phoneClean = phone.replace(/\D/g, '');
-            const cardNumber = '29' + phoneClean.padStart(10, '0').substring(0, 10);
-            
-            const newClient = {
-                fullName: 'Клиент ' + phone,
-                phone: phone,
-                cardNumber: cardNumber,
-                balance: 0,
-                history: [],
-                createdAt: new Date().toISOString()
-            };
-            
-            db.ref('clients').push(newClient).then(ref => {
-                const newKey = ref.key;
-                showToast('✅ Карта создана! Штрихкод: ' + cardNumber);
-                
-                db.ref('stores/' + storeId).once('value', snap2 => {
-                    const store = snap2.val();
-                    const user = { 
-                        ...newClient, 
-                        id: newKey,
-                        role: 'client', 
-                        storeId: storeId,
-                        storeName: store ? store.name : 'Неизвестный магазин'
-                    };
-                    localStorage.setItem('shop_user', JSON.stringify(user));
-                    window.location.href = 'client.html';
-                });
-            }).catch(err => {
-                showToast('❌ Ошибка создания карты: ' + err.message, true);
-            });
+            showToast('❌ Клиент с таким номером не найден в этом магазине', true);
         }
     });
 }
