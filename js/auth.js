@@ -26,7 +26,6 @@ function cashierLogin() {
         return;
     }
     
-    // Ищем кассира по номеру карты в выбранном магазине
     db.ref('stores/' + storeId + '/cashiers').orderByChild('cardNumber').equalTo(cardNumber).once('value', snap => {
         const cashiers = snap.val();
         let found = null;
@@ -69,14 +68,19 @@ function clientLogin() {
         return;
     }
     
-    // Очищаем телефон от лишних символов для поиска
-    const cleanPhone = phone.replace(/\D/g, '');
+    // Поддерживаем разные форматы ввода телефона
+    let cleanPhone = phone.replace(/[^0-9+]/g, '');
+    if (cleanPhone.startsWith('+')) {
+        cleanPhone = cleanPhone.substring(1);
+    }
+    cleanPhone = cleanPhone.replace(/\D/g, '');
+    
     if (cleanPhone.length < 10) {
-        showToast('❌ Введите корректный номер телефона (не менее 10 цифр)', true);
+        showToast('❌ Введите корректный номер телефона', true);
         return;
     }
     
-    // Ищем клиента по телефону в любом магазине
+    // Ищем клиента по телефону
     db.ref('clients').orderByChild('phone').equalTo(phone).once('value', snap => {
         const clients = snap.val();
         let found = null;
@@ -84,7 +88,7 @@ function clientLogin() {
         
         for (let key in clients) {
             const c = clients[key];
-            if (c.phone === phone) {
+            if (c.phone === phone || c.phone === cleanPhone) {
                 found = c;
                 foundKey = key;
                 break;
@@ -105,7 +109,7 @@ function clientLogin() {
                 window.location.href = 'client.html';
             });
         } else {
-            showToast('❌ Клиент с таким номером не найден в этом магазине', true);
+            showToast('❌ Клиент с таким номером не найден', true);
         }
     });
 }
