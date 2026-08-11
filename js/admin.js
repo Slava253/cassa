@@ -82,7 +82,6 @@ function deleteStore(id) {
     });
 }
 
-// ===== ЗАГРУЗКА СПИСКА МАГАЗИНОВ ДЛЯ SELECT =====
 function loadStoreSelects() {
     const select = document.getElementById('cashierStoreSelect');
     if (!select) return;
@@ -109,7 +108,7 @@ function loadStoreSelects() {
 function addCashier() {
     const storeId = document.getElementById('cashierStoreSelect').value;
     const fullName = document.getElementById('cashierFullName').value.trim();
-    const login = document.getElementById('cashierLogin').value.trim();
+    const cardNumber = document.getElementById('cashierCardNumber').value.trim();
     const password = document.getElementById('cashierPassword').value.trim();
     
     if (!storeId) {
@@ -122,9 +121,9 @@ function addCashier() {
         document.getElementById('cashierFullName').focus();
         return;
     }
-    if (!login) {
-        showToast('❌ Введите логин кассира', true);
-        document.getElementById('cashierLogin').focus();
+    if (!cardNumber) {
+        showToast('❌ Введите номер карты кассира', true);
+        document.getElementById('cashierCardNumber').focus();
         return;
     }
     if (!password) {
@@ -140,25 +139,25 @@ function addCashier() {
             return;
         }
         
-        // Проверяем уникальность логина в магазине
-        db.ref('stores/' + storeId + '/cashiers').orderByChild('login').equalTo(login).once('value', snap2 => {
+        // Проверяем уникальность номера карты в магазине
+        db.ref('stores/' + storeId + '/cashiers').orderByChild('cardNumber').equalTo(cardNumber).once('value', snap2 => {
             if (snap2.exists()) {
-                showToast('❌ Кассир с таким логином уже есть в этом магазине!', true);
+                showToast('❌ Кассир с таким номером карты уже есть в этом магазине!', true);
                 return;
             }
             
             const data = { 
                 fullName: fullName, 
-                login: login, 
+                cardNumber: cardNumber, 
                 password: password, 
                 createdAt: new Date().toISOString() 
             };
             
             db.ref('stores/' + storeId + '/cashiers').push(data).then(() => {
                 document.getElementById('cashierFullName').value = '';
-                document.getElementById('cashierLogin').value = '';
+                document.getElementById('cashierCardNumber').value = '';
                 document.getElementById('cashierPassword').value = '';
-                showToast(`✅ Кассир ${fullName} добавлен в магазин!`);
+                showToast(`✅ Кассир ${fullName} добавлен! Номер карты: ${cardNumber}`);
                 loadCashiers();
                 loadStores();
             }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
@@ -196,7 +195,7 @@ function loadCashiers() {
                         <div class="member-info">
                             <div>
                                 <strong>${c.fullName}</strong><br>
-                                <span class="badge">🔑 ${c.login}</span>
+                                <span class="badge">🎫 ${c.cardNumber}</span>
                                 <span style="font-size:0.7rem;color:#3e5f7e;">🔒 ${c.password}</span>
                             </div>
                         </div>
