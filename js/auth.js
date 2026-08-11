@@ -61,43 +61,44 @@ function cashierLogin() {
         } else {
             showToast('❌ Неверный номер карты или пароль', true);
         }
+    }).catch(err => {
+        console.error('Ошибка входа кассира:', err);
+        showToast('❌ Ошибка входа', true);
     });
 }
 
 function clientLogin() {
     const storeId = document.getElementById('clientStoreSelect').value;
-    const phone = document.getElementById('clientPhoneInput').value.trim();
+    let phone = document.getElementById('clientPhoneInput').value.trim();
     
     if (!storeId) {
         showToast('❌ Выберите магазин', true);
         return;
     }
-    if (!phone) {
+    if (!phone || phone === '+7') {
         showToast('❌ Введите номер телефона', true);
         return;
     }
     
-    // Поддерживаем разные форматы ввода телефона
-    let cleanPhone = phone.replace(/[^0-9+]/g, '');
-    if (cleanPhone.startsWith('+')) {
-        cleanPhone = cleanPhone.substring(1);
-    }
-    cleanPhone = cleanPhone.replace(/\D/g, '');
-    
+    // Удаляем +7 если есть
+    let cleanPhone = phone.replace(/^\+7/, '').replace(/\D/g, '');
     if (cleanPhone.length < 10) {
-        showToast('❌ Введите корректный номер телефона', true);
+        showToast('❌ Введите корректный номер телефона (10 цифр)', true);
         return;
     }
     
+    // Формируем полный номер
+    const fullPhone = '+7' + cleanPhone;
+    
     // Ищем клиента по телефону
-    db.ref('clients').orderByChild('phone').equalTo(phone).once('value', snap => {
+    db.ref('clients').orderByChild('phone').equalTo(fullPhone).once('value', snap => {
         const clients = snap.val();
         let found = null;
         let foundKey = null;
         
         for (let key in clients) {
             const c = clients[key];
-            if (c.phone === phone || c.phone === cleanPhone) {
+            if (c.phone === fullPhone) {
                 found = c;
                 foundKey = key;
                 break;
@@ -120,6 +121,9 @@ function clientLogin() {
         } else {
             showToast('❌ Клиент с таким номером не найден', true);
         }
+    }).catch(err => {
+        console.error('Ошибка входа клиента:', err);
+        showToast('❌ Ошибка входа', true);
     });
 }
 
