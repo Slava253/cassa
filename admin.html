@@ -113,7 +113,23 @@
                         </div>
                     </div>
                 </div>
-                <button onclick="createPromotion()" class="btn-success" style="width:100%;">🎉 Создать акцию</button>
+                
+                <!-- НОВЫЙ БЛОК: ВАЛЮТА НАКОПЛЕНИЯ -->
+                <div class="grid-2col" style="margin-top:12px; padding-top:12px; border-top:2px solid #eef2f8;">
+                    <div class="form-group">
+                        <label>💰 Валюта накопления</label>
+                        <select id="promotionCurrency">
+                            <option value="Бонусы">⭐ Бонусы</option>
+                            <option value="Наклейки">🏷️ Наклейки</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>💎 Сумма для накопления (₽)</label>
+                        <input type="number" id="promotionAmount" placeholder="1000" min="1" step="1">
+                    </div>
+                </div>
+                
+                <button onclick="createPromotion()" class="btn-success" style="width:100%; margin-top:12px;">🎉 Создать акцию</button>
             </div>
 
             <!-- Список акций -->
