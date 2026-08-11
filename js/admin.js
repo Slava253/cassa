@@ -269,7 +269,8 @@ function createPromotion() {
     const prize = document.getElementById('promotionPrize').value.trim();
     const conditions = document.getElementById('promotionConditions').value.trim();
     const currency = document.getElementById('promotionCurrency').value;
-    const amount = parseFloat(document.getElementById('promotionAmount').value);
+    const currencyCount = parseInt(document.getElementById('promotionCurrencyCount').value);
+    const currencyPrice = parseInt(document.getElementById('promotionCurrencyPrice').value);
     
     if (!title) {
         showToast('❌ Введите название акции', true);
@@ -285,9 +286,14 @@ function createPromotion() {
         document.getElementById('promotionDescription').focus();
         return;
     }
-    if (isNaN(amount) || amount <= 0) {
-        showToast('❌ Введите сумму для накопления', true);
-        document.getElementById('promotionAmount').focus();
+    if (isNaN(currencyCount) || currencyCount <= 0) {
+        showToast('❌ Введите количество валюты для накопления', true);
+        document.getElementById('promotionCurrencyCount').focus();
+        return;
+    }
+    if (isNaN(currencyPrice) || currencyPrice <= 0) {
+        showToast('❌ Введите стоимость 1 единицы валюты', true);
+        document.getElementById('promotionCurrencyPrice').focus();
         return;
     }
     
@@ -299,7 +305,8 @@ function createPromotion() {
         prize: prize || 'Не указан',
         conditions: conditions || 'Не указаны',
         currency: currency,
-        amount: amount,
+        currencyCount: currencyCount,
+        currencyPrice: currencyPrice,
         createdAt: new Date().toISOString(),
         active: true
     };
@@ -311,8 +318,9 @@ function createPromotion() {
         document.getElementById('promotionDescription').value = '';
         document.getElementById('promotionPrize').value = '';
         document.getElementById('promotionConditions').value = '';
-        document.getElementById('promotionCurrency').value = 'Бонусы';
-        document.getElementById('promotionAmount').value = '';
+        document.getElementById('promotionCurrency').value = 'Баллы';
+        document.getElementById('promotionCurrencyCount').value = '';
+        document.getElementById('promotionCurrencyPrice').value = '';
         showToast(`✅ Акция "${title}" создана!`);
         loadPromotions();
     }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
@@ -341,7 +349,12 @@ function loadPromotions() {
                         <span style="font-size:0.8rem; color:#3e5f7e;">${p.description}</span><br>
                         <span class="badge">🎁 ${p.prize}</span>
                         <span class="badge">📋 ${p.conditions}</span>
-                        <span class="badge" style="background:#1a1a2e; color:white;">${currencyIcon} ${p.currency}: ${p.amount} ₽</span>
+                        <span class="badge" style="background:#1a1a2e; color:white;">
+                            ${currencyIcon} ${p.currency}: ${p.currencyCount} ${p.currency === 'Наклейки' ? 'шт' : 'шт'}
+                        </span>
+                        <span class="badge" style="background:#d4a13e; color:white;">
+                            💰 ${p.currencyPrice} ₽/шт
+                        </span>
                         <span style="font-size:0.7rem; color:#1d6f2c; margin-left:8px;">${status}</span>
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
