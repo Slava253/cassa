@@ -268,6 +268,8 @@ function createPromotion() {
     const description = document.getElementById('promotionDescription').value.trim();
     const prize = document.getElementById('promotionPrize').value.trim();
     const conditions = document.getElementById('promotionConditions').value.trim();
+    const currency = document.getElementById('promotionCurrency').value;
+    const amount = parseFloat(document.getElementById('promotionAmount').value);
     
     if (!title) {
         showToast('❌ Введите название акции', true);
@@ -283,6 +285,11 @@ function createPromotion() {
         document.getElementById('promotionDescription').focus();
         return;
     }
+    if (isNaN(amount) || amount <= 0) {
+        showToast('❌ Введите сумму для накопления', true);
+        document.getElementById('promotionAmount').focus();
+        return;
+    }
     
     const data = {
         title: title,
@@ -291,6 +298,8 @@ function createPromotion() {
         description: description,
         prize: prize || 'Не указан',
         conditions: conditions || 'Не указаны',
+        currency: currency,
+        amount: amount,
         createdAt: new Date().toISOString(),
         active: true
     };
@@ -302,6 +311,8 @@ function createPromotion() {
         document.getElementById('promotionDescription').value = '';
         document.getElementById('promotionPrize').value = '';
         document.getElementById('promotionConditions').value = '';
+        document.getElementById('promotionCurrency').value = 'Бонусы';
+        document.getElementById('promotionAmount').value = '';
         showToast(`✅ Акция "${title}" создана!`);
         loadPromotions();
     }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
@@ -321,6 +332,7 @@ function loadPromotions() {
         for (let key in data) {
             const p = data[key];
             const status = p.active ? '✅ Активна' : '❌ Завершена';
+            const currencyIcon = p.currency === 'Наклейки' ? '🏷️' : '⭐';
             html += `
                 <div class="member-item">
                     <div>
@@ -329,6 +341,7 @@ function loadPromotions() {
                         <span style="font-size:0.8rem; color:#3e5f7e;">${p.description}</span><br>
                         <span class="badge">🎁 ${p.prize}</span>
                         <span class="badge">📋 ${p.conditions}</span>
+                        <span class="badge" style="background:#1a1a2e; color:white;">${currencyIcon} ${p.currency}: ${p.amount} ₽</span>
                         <span style="font-size:0.7rem; color:#1d6f2c; margin-left:8px;">${status}</span>
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
