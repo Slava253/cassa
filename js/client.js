@@ -22,6 +22,11 @@ function loadClientPromotions() {
             if (start <= now && end >= now && p.active) {
                 hasActive = true;
                 const currencyIcon = p.currency === 'Наклейки' ? '🏷️' : '⭐';
+                
+                // Расчет накопления (пример: показываем сколько уже накоплено)
+                // В реальном проекте здесь нужно получать данные о накоплениях клиента
+                const collected = Math.floor(Math.random() * p.currencyCount);
+                
                 html += `
                     <div class="document-card" style="border-left: 4px solid #f6b83d;">
                         <h4>🎉 ${p.title}</h4>
@@ -29,12 +34,26 @@ function loadClientPromotions() {
                         <div style="margin:8px 0;">${p.description}</div>
                         <div style="font-size:0.8rem; color:#3e5f7e;">🎁 ${p.prize}</div>
                         <div style="font-size:0.8rem; color:#3e5f7e;">📋 ${p.conditions}</div>
-                        <div style="margin-top:8px; padding:8px; background:#f0f4f9; border-radius:12px;">
-                            <span class="badge" style="background:#1a1a2e; color:white; font-size:0.9rem;">
-                                ${currencyIcon} ${p.currency}: ${p.amount} ₽
-                            </span>
-                            <span class="badge" style="background:#1d6f2c; color:white;">🔥 Активна</span>
+                        <div style="margin-top:8px; padding:12px; background:#f0f4f9; border-radius:12px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                                <span style="font-weight:600;">
+                                    ${currencyIcon} ${p.currency}
+                                </span>
+                                <span class="badge" style="background:#1a1a2e; color:white; font-size:0.9rem;">
+                                    ${collected} / ${p.currencyCount} ${p.currency === 'Наклейки' ? 'шт' : 'шт'}
+                                </span>
+                            </div>
+                            <div style="margin-top:4px; font-size:0.8rem; color:#3e5f7e;">
+                                💰 ${p.currencyPrice} ₽ за 1 ${p.currency === 'Наклейки' ? 'наклейку' : 'балл'}
+                            </div>
+                            <div style="margin-top:4px; width:100%; background:#eef2f8; border-radius:20px; height:10px; overflow:hidden;">
+                                <div style="width:${(collected / p.currencyCount * 100)}%; background:#f6b83d; height:100%; border-radius:20px; transition: width 0.5s;"></div>
+                            </div>
+                            <div style="margin-top:4px; font-size:0.7rem; color:#7a8a9e;">
+                                ${Math.round(collected / p.currencyCount * 100)}% выполнено
+                            </div>
                         </div>
+                        <span class="badge" style="background:#1d6f2c; color:white; margin-top:8px;">🔥 Активна</span>
                     </div>
                 `;
             }
