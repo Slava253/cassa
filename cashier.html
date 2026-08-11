@@ -1,213 +1,57 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <meta name="theme-color" content="#1a1a2e">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="img/icon-192.png">
-    <title>Магазин | Касса</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/mobile.css">
-</head>
-<body>
-    <div class="app-container">
-        <div class="header">
-            <div class="logo-area">
-                <h1>💳 Магазин</h1>
-                <p id="cashierStoreDisplay">Кассовый терминал</p>
-            </div>
-            <div class="user-status">
-                <span id="cashierName">👤 Кассир</span>
-                <button onclick="logout()">Выйти</button>
-            </div>
-        </div>
+// ===== ЗВУК ПРИ ДОБАВЛЕНИИ ЗАКАЗА =====
+function playOrderSound() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Приятный звук кассы
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        oscillator.frequency.value = 880;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+        
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.2);
+        
+        // Второй звук (как подтверждение)
+        setTimeout(() => {
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc2.frequency.value = 1100;
+            osc2.type = 'sine';
+            gain2.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+            osc2.start();
+            osc2.stop(audioCtx.currentTime + 0.15);
+        }, 150);
+    } catch(e) {
+        // Если звук не поддерживается - игнорируем
+        console.log('Звук не поддерживается');
+    }
+}
 
-        <div class="main-content">
-            <!-- Сканирование клиента -->
-            <div class="card">
-                <div class="card-title">🎫 Найти клиента</div>
-                <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                    <div class="form-group" style="flex:2; min-width:200px;">
-                        <label>Номер карты, телефон или никнейм</label>
-                        <input type="text" id="clientScanInput" placeholder="29XXXXXXXXXX, телефон или никнейм">
-                    </div>
-                    <button onclick="scanClient()" style="align-self:flex-end;">🔍 Найти</button>
-                </div>
-                <div id="scannedClient" style="display:none;" class="member-item" style="margin-top:12px;"></div>
-            </div>
+// Добавляем вызов звука в функцию processPayment
+// В конце функции processPayment добавляем:
+// playOrderSound();
 
-            <!-- Списание баллов -->
-            <div id="discountSection" class="discount-section" style="display:none;">
-                <div class="flex-between">
-                    <div>
-                        <strong>⭐ Баллы клиента: <span id="clientPointsDisplay" class="badge-points">0</span></strong>
-                        <div style="font-size:0.8rem; color:#3e5f7e; margin-top:4px;">10 баллов = 1 ₽ скидки</div>
-                    </div>
-                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                        <button onclick="applyDiscount()" class="btn-success" style="font-size:0.85rem;">✨ Списать баллы</button>
-                        <button onclick="removeDiscount()" class="btn-warning" style="font-size:0.85rem;">❌ Убрать скидку</button>
-                    </div>
-                </div>
-                <div id="discountInfo" style="margin-top:8px; font-weight:bold; color:#1d6f2c;"></div>
-            </div>
+// Также добавляем звук при добавлении товара в корзину
+function addToCart() {
+    // ... существующий код ...
+    // В конце функции:
+    playOrderSound();
+}
 
-            <!-- ДОБАВЛЕНИЕ ТОВАРА В СИСТЕМУ -->
-            <div class="card" style="border: 3px solid #f6b83d; background: #fffdf5;">
-                <div class="card-title" style="color: #d4a13e;">📦 ДОБАВИТЬ ТОВАР В СИСТЕМУ</div>
-                <div style="display:flex; flex-wrap:wrap; gap:12px;">
-                    <div class="form-group" style="flex:1; min-width:150px;">
-                        <label>🔲 Штрихкод</label>
-                        <input type="text" id="newProductBarcode" placeholder="4601234567890" style="font-size:1.1rem; font-family:monospace;">
-                    </div>
-                    <div class="form-group" style="flex:2; min-width:180px;">
-                        <label>📝 Название товара</label>
-                        <input type="text" id="newProductName" placeholder="Молоко 'Деревенское' 1л">
-                    </div>
-                    <div class="form-group" style="flex:1; min-width:120px;">
-                        <label>💰 Обычная цена (₽)</label>
-                        <input type="number" id="newProductPrice" step="0.01" placeholder="89.90">
-                    </div>
-                    <div class="form-group" style="flex:1; min-width:120px;">
-                        <label>💎 Цена со скидкой (₽)</label>
-                        <input type="number" id="newProductDiscountPrice" step="0.01" placeholder="79.90">
-                    </div>
-                </div>
-                <button onclick="addNewProduct()" class="btn-success" style="width:100%; margin-top:8px; padding:14px; font-size:1.1rem;">➕ ДОБАВИТЬ ТОВАР В МАГАЗИН</button>
-                <div id="addProductStatus" style="margin-top:8px; font-size:0.85rem; color:#7a8a9e;"></div>
-            </div>
-
-            <!-- Управление товарами -->
-            <div class="card" style="border: 2px solid #d4a13e;">
-                <div class="card-title">🔧 Управление товарами</div>
-                <div style="margin-bottom:12px;">
-                    <label style="font-weight:600; font-size:0.85rem;">🔍 Поиск товара по штрихкоду</label>
-                    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:4px;">
-                        <input type="text" id="searchProductBarcode" placeholder="Введите штрихкод" style="flex:2; min-width:150px;">
-                        <button onclick="searchProduct()" style="flex:0;">🔍 Найти</button>
-                    </div>
-                </div>
-                <div id="productEditResult" style="display:none; padding:12px; background:#f8faff; border-radius:16px; margin-bottom:12px;"></div>
-                <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:8px;">
-                    <div class="form-group" style="flex:1; min-width:120px;">
-                        <label>🔲 Штрихкод</label>
-                        <input type="text" id="editBarcode" placeholder="4601234567890" style="font-size:1rem; font-family:monospace;">
-                    </div>
-                    <div class="form-group" style="flex:2; min-width:150px;">
-                        <label>📝 Название</label>
-                        <input type="text" id="editName" placeholder="Название товара">
-                    </div>
-                    <div class="form-group" style="flex:1; min-width:100px;">
-                        <label>💰 Цена (₽)</label>
-                        <input type="number" id="editPrice" step="0.01" placeholder="0.00">
-                    </div>
-                    <div class="form-group" style="flex:1; min-width:100px;">
-                        <label>💎 Цена со скидкой</label>
-                        <input type="number" id="editDiscountPrice" step="0.01" placeholder="0.00">
-                    </div>
-                    <div style="display:flex; gap:8px; align-self:flex-end; flex-wrap:wrap;">
-                        <button onclick="saveProductEdit()" class="btn-success">💾 Сохранить</button>
-                        <button onclick="deleteProduct()" class="btn-danger">🗑 Удалить</button>
-                        <button onclick="clearProductEdit()" class="btn-warning">✕ Отмена</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Весовые товары -->
-            <div class="card" style="border: 2px solid #f6b83d;">
-                <div class="card-title">⚖️ Весовые товары</div>
-                <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                    <div class="form-group" style="flex:1; min-width:150px;">
-                        <label>Категория</label>
-                        <select id="weightCategory" onchange="updateWeightProducts()">
-                            <option value="Выпечка">🥖 Выпечка</option>
-                            <option value="Морепродукты">🦐 Морепродукты</option>
-                            <option value="Овощи">🥕 Овощи</option>
-                            <option value="Фрукты">🍎 Фрукты</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="flex:2; min-width:180px;">
-                        <label>Товар</label>
-                        <select id="weightProduct"></select>
-                    </div>
-                    <div class="form-group" style="flex:1; min-width:100px;">
-                        <label>Вес / Количество</label>
-                        <input type="number" id="weightQuantity" value="1" step="0.1" min="0.1">
-                    </div>
-                    <div class="form-group" style="flex:1; min-width:80px;">
-                        <label>Цена за кг/шт</label>
-                        <input type="number" id="weightPrice" step="0.01" placeholder="0.00">
-                    </div>
-                    <button onclick="addWeightProduct()" style="align-self:flex-end;">➕ Добавить</button>
-                </div>
-                <div style="margin-top:8px; font-size:0.8rem; color:#7a8a9e;">
-                    💡 Выпечка добавляется в <strong>штуках</strong>, остальные в <strong>килограммах</strong>
-                </div>
-            </div>
-
-            <!-- Сканирование товара в корзину -->
-            <div class="card">
-                <div class="card-title">🛒 Сканировать товар в корзину</div>
-                <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                    <div class="form-group" style="flex:2; min-width:200px;">
-                        <label>🔲 Отсканируйте штрихкод</label>
-                        <input type="text" id="cartBarcodeInput" placeholder="4601234567890" style="font-size:1.2rem; font-family:monospace;">
-                    </div>
-                    <div class="form-group" style="flex:1; min-width:80px;">
-                        <label>Кол-во</label>
-                        <input type="number" id="cartQuantity" value="1" min="1">
-                    </div>
-                    <button onclick="addToCart()" style="align-self:flex-end;">➕ Добавить</button>
-                </div>
-            </div>
-
-            <!-- Корзина -->
-            <div class="card">
-                <div class="flex-between">
-                    <div class="card-title">🛒 Корзина</div>
-                    <div><span class="badge">Сумма: <strong id="cartTotal">0.00</strong> ₽</span></div>
-                </div>
-                <div id="cartList"><div class="empty-state">Корзина пуста</div></div>
-                
-                <div style="margin-top:16px; padding-top:16px; border-top:2px solid #eef2f8;">
-                    <label style="font-weight:600; margin-bottom:10px; display:block;">💳 Способ оплаты:</label>
-                    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
-                        <button onclick="selectPayment('cash')" id="payCash" class="payment-btn" style="flex:1; background:#eef2f8; color:#1a1a2e;">💵 Наличные</button>
-                        <button onclick="selectPayment('card')" id="payCard" class="payment-btn" style="flex:1; background:#eef2f8; color:#1a1a2e;">💳 Карта</button>
-                    </div>
-                    <div id="cashInputArea" style="display:none;">
-                        <div class="form-group">
-                            <label>💰 Сумма от покупателя:</label>
-                            <input type="number" id="cashGiven" step="0.01" placeholder="Введите сумму" style="font-size:1.1rem;">
-                        </div>
-                        <div id="changeDisplay" style="display:none; background:#f0f9f0; padding:12px; border-radius:16px; margin-bottom:12px;">
-                            <strong>💵 Сдача: <span id="changeAmount" style="color:#1d6f2c; font-size:1.3rem;">0.00 ₽</span></strong>
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                        <button onclick="processPayment()" class="btn-success" style="flex:2;">💵 Оплатить</button>
-                        <button onclick="clearCart()" class="small-btn danger" style="flex:1;">🗑 Очистить</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- История -->
-            <div class="card">
-                <div class="card-title">📜 История</div>
-                <div id="cashierHistory"><div class="loading-spinner">Загрузка...</div></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="toast" class="success-toast" style="display:none;"></div>
-
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="js/firebase-config.js"></script>
-    <script src="js/barcode.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/cashier.js"></script>
-</body>
-</html>
+// И при добавлении весового товара
+function addWeightProduct() {
+    // ... существующий код ...
+    // В конце функции:
+    playOrderSound();
+}
