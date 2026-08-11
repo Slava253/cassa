@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="img/icon-192.png">
-    <title>Магазин | Вход</title>
+    <title>У дома | Вход</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/mobile.css">
@@ -16,7 +16,7 @@
     <div class="app-container">
         <div class="header">
             <div class="logo-area">
-                <h1>🏪 Магазин</h1>
+                <h1>🏪 У дома</h1>
                 <p>Касса • Бонусы • Карты</p>
             </div>
         </div>
@@ -129,18 +129,9 @@
             });
         }
 
-        // Добавляем обработчик для поля телефона
         document.addEventListener('DOMContentLoaded', function() {
             const phoneInput = document.getElementById('clientPhoneInput');
             if (phoneInput) {
-                // Автоматически ставим курсор после +7
-                phoneInput.addEventListener('focus', function() {
-                    if (this.value === '') {
-                        this.value = '';
-                    }
-                });
-                
-                // Ограничиваем ввод только цифрами и дефисами
                 phoneInput.addEventListener('input', function() {
                     this.value = this.value.replace(/[^0-9\-\(\) ]/g, '');
                 });
