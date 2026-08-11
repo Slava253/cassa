@@ -1,5 +1,3 @@
-// Добавляем функцию загрузки акций в client.js
-
 // ===== ЗАГРУЗКА АКЦИЙ =====
 function loadClientPromotions() {
     const container = document.getElementById('clientPromotionsList');
@@ -23,6 +21,7 @@ function loadClientPromotions() {
             
             if (start <= now && end >= now && p.active) {
                 hasActive = true;
+                const currencyIcon = p.currency === 'Наклейки' ? '🏷️' : '⭐';
                 html += `
                     <div class="document-card" style="border-left: 4px solid #f6b83d;">
                         <h4>🎉 ${p.title}</h4>
@@ -30,7 +29,12 @@ function loadClientPromotions() {
                         <div style="margin:8px 0;">${p.description}</div>
                         <div style="font-size:0.8rem; color:#3e5f7e;">🎁 ${p.prize}</div>
                         <div style="font-size:0.8rem; color:#3e5f7e;">📋 ${p.conditions}</div>
-                        <span class="badge" style="background:#1d6f2c; color:white;">🔥 Активна</span>
+                        <div style="margin-top:8px; padding:8px; background:#f0f4f9; border-radius:12px;">
+                            <span class="badge" style="background:#1a1a2e; color:white; font-size:0.9rem;">
+                                ${currencyIcon} ${p.currency}: ${p.amount} ₽
+                            </span>
+                            <span class="badge" style="background:#1d6f2c; color:white;">🔥 Активна</span>
+                        </div>
                     </div>
                 `;
             }
