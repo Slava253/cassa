@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadCashiers();
     loadClients();
     loadStoreSelects();
+    loadPromotions();
 });
 
 // ===== МАГАЗИНЫ =====
@@ -132,14 +133,12 @@ function addCashier() {
         return;
     }
     
-    // Проверяем, существует ли магазин
     db.ref('stores/' + storeId).once('value', snap => {
         if (!snap.exists()) {
             showToast('❌ Магазин не найден!', true);
             return;
         }
         
-        // Проверяем уникальность номера карты в магазине
         db.ref('stores/' + storeId + '/cashiers').orderByChild('cardNumber').equalTo(cardNumber).once('value', snap2 => {
             if (snap2.exists()) {
                 showToast('❌ Кассир с таким номером карты уже есть в этом магазине!', true);
@@ -258,6 +257,101 @@ function removeClient(id) {
     if (!confirm('Удалить клиента?')) return;
     db.ref('clients/' + id).remove().then(() => {
         showToast('🗑 Клиент удалён');
+    });
+}
+
+// ===== АКЦИИ =====
+function createPromotion() {
+    const title = document.getElementById('promotionTitle').value.trim();
+    const startDate = document.getElementById('promotionStart').value;
+    const endDate = document.getElementById('promotionEnd').value;
+    const description = document.getElementById('promotionDescription').value.trim();
+    const prize = document.getElementById('promotionPrize').value.trim();
+    const conditions = document.getElementById('promotionConditions').value.trim();
+    
+    if (!title) {
+        showToast('❌ Введите название акции', true);
+        document.getElementById('promotionTitle').focus();
+        return;
+    }
+    if (!startDate || !endDate) {
+        showToast('❌ Укажите даты начала и окончания', true);
+        return;
+    }
+    if (!description) {
+        showToast('❌ Введите описание акции', true);
+        document.getElementById('promotionDescription').focus();
+        return;
+    }
+    
+    const data = {
+        title: title,
+        startDate: startDate,
+        endDate: endDate,
+        description: description,
+        prize: prize || 'Не указан',
+        conditions: conditions || 'Не указаны',
+        createdAt: new Date().toISOString(),
+        active: true
+    };
+    
+    db.ref('promotions').push(data).then(() => {
+        document.getElementById('promotionTitle').value = '';
+        document.getElementById('promotionStart').value = '';
+        document.getElementById('promotionEnd').value = '';
+        document.getElementById('promotionDescription').value = '';
+        document.getElementById('promotionPrize').value = '';
+        document.getElementById('promotionConditions').value = '';
+        showToast(`✅ Акция "${title}" создана!`);
+        loadPromotions();
+    }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+}
+
+function loadPromotions() {
+    const container = document.getElementById('promotionsList');
+    container.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
+    
+    db.ref('promotions').on('value', snap => {
+        const data = snap.val();
+        if (!data) {
+            container.innerHTML = '<div class="empty-state">Нет акций</div>';
+            return;
+        }
+        let html = '';
+        for (let key in data) {
+            const p = data[key];
+            const status = p.active ? '✅ Активна' : '❌ Завершена';
+            html += `
+                <div class="member-item">
+                    <div>
+                        <strong>${p.title}</strong><br>
+                        <span style="font-size:0.8rem; color:#7a8a9e;">📅 ${p.startDate} — ${p.endDate}</span><br>
+                        <span style="font-size:0.8rem; color:#3e5f7e;">${p.description}</span><br>
+                        <span class="badge">🎁 ${p.prize}</span>
+                        <span class="badge">📋 ${p.conditions}</span>
+                        <span style="font-size:0.7rem; color:#1d6f2c; margin-left:8px;">${status}</span>
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button class="small-btn" onclick="togglePromotion('${key}', ${!p.active})">${p.active ? '❌ Завершить' : '✅ Активировать'}</button>
+                        <button class="small-btn danger" onclick="deletePromotion('${key}')">🗑</button>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    });
+}
+
+function togglePromotion(id, active) {
+    db.ref('promotions/' + id).update({ active: active }).then(() => {
+        showToast(active ? '✅ Акция активирована' : '❌ Акция завершена');
+    });
+}
+
+function deletePromotion(id) {
+    if (!confirm('Удалить акцию?')) return;
+    db.ref('promotions/' + id).remove().then(() => {
+        showToast('🗑 Акция удалена');
     });
 }
 
