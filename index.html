@@ -60,12 +60,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>👤 Логин</label>
-                        <input type="text" id="cashierLoginInput" placeholder="Введите логин">
-                    </div>
-                    <div class="form-group">
-                        <label>🔒 Пароль</label>
-                        <input type="password" id="cashierPasswordInput" placeholder="Введите пароль">
+                        <label>🎫 Номер карты кассира</label>
+                        <input type="text" id="cashierCardInput" placeholder="Введите номер карты" style="font-size:1.1rem; font-family:monospace;">
                     </div>
                     <button onclick="cashierLogin()" class="btn-login">💳 Войти</button>
                 </div>
@@ -79,7 +75,7 @@
                     </div>
                     <div class="form-group">
                         <label>📱 Номер телефона</label>
-                        <input type="tel" id="clientPhoneInput" placeholder="+7 900 123-45-67">
+                        <input type="tel" id="clientPhoneInput" placeholder="+7 900 123-45-67" inputmode="numeric" pattern="[0-9+\-\(\) ]*">
                     </div>
                     <button onclick="clientLogin()" class="btn-login">👤 Войти</button>
                 </div>
