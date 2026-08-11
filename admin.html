@@ -119,14 +119,18 @@
                     <div class="form-group">
                         <label>💰 Валюта накопления</label>
                         <select id="promotionCurrency">
-                            <option value="Бонусы">⭐ Бонусы</option>
+                            <option value="Баллы">⭐ Баллы</option>
                             <option value="Наклейки">🏷️ Наклейки</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>💎 Сумма для накопления (₽)</label>
-                        <input type="number" id="promotionAmount" placeholder="1000" min="1" step="1">
+                        <label>📊 Количество валюты для накопления</label>
+                        <input type="number" id="promotionCurrencyCount" placeholder="70" min="1" step="1">
                     </div>
+                </div>
+                <div class="form-group">
+                    <label>💰 Стоимость 1 единицы валюты (₽)</label>
+                    <input type="number" id="promotionCurrencyPrice" placeholder="400" min="1" step="1">
                 </div>
                 
                 <button onclick="createPromotion()" class="btn-success" style="width:100%; margin-top:12px;">🎉 Создать акцию</button>
