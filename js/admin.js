@@ -8,6 +8,8 @@ if (!user || user.role !== 'admin') {
 document.addEventListener('DOMContentLoaded', function() {
     loadStores();
     loadCashiers();
+    loadCouriers();
+    loadSupport();
     loadClients();
     loadStoreSelects();
     loadPromotions();
@@ -80,6 +82,8 @@ function deleteStore(id) {
         loadStoreSelects();
         loadStores();
         loadCashiers();
+        loadCouriers();
+        loadSupport();
     });
 }
 
@@ -215,6 +219,174 @@ function removeCashier(storeId, cashierId) {
         showToast('🗑 Кассир удалён');
         loadCashiers();
         loadStores();
+    });
+}
+
+// ===== КУРЬЕРЫ =====
+function addCourier() {
+    const fullName = document.getElementById('courierFullName').value.trim();
+    const login = document.getElementById('courierLogin').value.trim();
+    const password = document.getElementById('courierPassword').value.trim();
+    
+    if (!fullName) {
+        showToast('❌ Введите ФИО курьера', true);
+        document.getElementById('courierFullName').focus();
+        return;
+    }
+    if (!login) {
+        showToast('❌ Введите логин курьера', true);
+        document.getElementById('courierLogin').focus();
+        return;
+    }
+    if (!password) {
+        showToast('❌ Введите пароль курьера', true);
+        document.getElementById('courierPassword').focus();
+        return;
+    }
+    
+    db.ref('couriers').orderByChild('login').equalTo(login).once('value', snap => {
+        if (snap.exists()) {
+            showToast('❌ Логин уже занят!', true);
+            document.getElementById('courierLogin').focus();
+            return;
+        }
+        
+        const data = {
+            fullName: fullName,
+            login: login,
+            password: password,
+            createdAt: new Date().toISOString()
+        };
+        
+        db.ref('couriers').push(data).then(() => {
+            document.getElementById('courierFullName').value = '';
+            document.getElementById('courierLogin').value = '';
+            document.getElementById('courierPassword').value = '';
+            showToast(`✅ Курьер ${fullName} добавлен!`);
+            loadCouriers();
+        }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+    });
+}
+
+function loadCouriers() {
+    const container = document.getElementById('couriersList');
+    container.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
+    
+    db.ref('couriers').on('value', snap => {
+        const data = snap.val();
+        if (!data) {
+            container.innerHTML = '<div class="empty-state">Нет курьеров</div>';
+            return;
+        }
+        let html = '';
+        for (let key in data) {
+            const c = data[key];
+            html += `
+                <div class="member-item">
+                    <div class="member-info">
+                        <div>
+                            <strong>🚚 ${c.fullName}</strong><br>
+                            <span class="badge">🔑 ${c.login}</span>
+                            <span style="font-size:0.7rem;color:#3e5f7e;">🔒 ${c.password}</span>
+                        </div>
+                    </div>
+                    <button class="small-btn danger" onclick="removeCourier('${key}')">🗑 Удалить</button>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    });
+}
+
+function removeCourier(id) {
+    if (!confirm('Удалить курьера?')) return;
+    db.ref('couriers/' + id).remove().then(() => {
+        showToast('🗑 Курьер удалён');
+        loadCouriers();
+    });
+}
+
+// ===== ПОДДЕРЖКА =====
+function addSupport() {
+    const fullName = document.getElementById('supportFullName').value.trim();
+    const login = document.getElementById('supportLogin').value.trim();
+    const password = document.getElementById('supportPassword').value.trim();
+    
+    if (!fullName) {
+        showToast('❌ Введите ФИО сотрудника поддержки', true);
+        document.getElementById('supportFullName').focus();
+        return;
+    }
+    if (!login) {
+        showToast('❌ Введите логин поддержки', true);
+        document.getElementById('supportLogin').focus();
+        return;
+    }
+    if (!password) {
+        showToast('❌ Введите пароль поддержки', true);
+        document.getElementById('supportPassword').focus();
+        return;
+    }
+    
+    db.ref('support').orderByChild('login').equalTo(login).once('value', snap => {
+        if (snap.exists()) {
+            showToast('❌ Логин уже занят!', true);
+            document.getElementById('supportLogin').focus();
+            return;
+        }
+        
+        const data = {
+            fullName: fullName,
+            login: login,
+            password: password,
+            createdAt: new Date().toISOString()
+        };
+        
+        db.ref('support').push(data).then(() => {
+            document.getElementById('supportFullName').value = '';
+            document.getElementById('supportLogin').value = '';
+            document.getElementById('supportPassword').value = '';
+            showToast(`✅ Сотрудник поддержки ${fullName} добавлен!`);
+            loadSupport();
+        }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+    });
+}
+
+function loadSupport() {
+    const container = document.getElementById('supportList');
+    container.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
+    
+    db.ref('support').on('value', snap => {
+        const data = snap.val();
+        if (!data) {
+            container.innerHTML = '<div class="empty-state">Нет сотрудников поддержки</div>';
+            return;
+        }
+        let html = '';
+        for (let key in data) {
+            const s = data[key];
+            html += `
+                <div class="member-item">
+                    <div class="member-info">
+                        <div>
+                            <strong>🆘 ${s.fullName}</strong><br>
+                            <span class="badge">🔑 ${s.login}</span>
+                            <span style="font-size:0.7rem;color:#3e5f7e;">🔒 ${s.password}</span>
+                        </div>
+                    </div>
+                    <button class="small-btn danger" onclick="removeSupport('${key}')">🗑 Удалить</button>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    });
+}
+
+function removeSupport(id) {
+    if (!confirm('Удалить сотрудника поддержки?')) return;
+    db.ref('support/' + id).remove().then(() => {
+        showToast('🗑 Сотрудник поддержки удалён');
+        loadSupport();
     });
 }
 
@@ -381,6 +553,7 @@ function deletePromotion(id) {
     });
 }
 
+// ===== TOAST =====
 function showToast(msg, isError = false) {
     const toast = document.getElementById('toast');
     if (!toast) return;
