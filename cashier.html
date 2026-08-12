@@ -171,6 +171,34 @@
                 </div>
                 <div id="cartList"><div class="empty-state">Корзина пуста</div></div>
                 
+                <!-- КНОПКА ОТМЕНЫ ТОВАРА -->
+                <div style="margin-top:12px; padding-top:12px; border-top:2px solid #eef2f8;">
+                    <button onclick="openCancelModal()" class="btn-danger" style="width:100%; padding:12px; font-size:1rem;">🔄 ОТМЕНА ТОВАРА</button>
+                </div>
+
+                <!-- Модальное окно отмены товара -->
+                <div id="cancelModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center;">
+                    <div style="background:#2c3e2f; padding:24px; border-radius:32px; border:2px solid #d4af37; max-width:400px; width:90%;">
+                        <h3 style="color:#ffd966; margin-bottom:16px; text-align:center;">🔄 ОТМЕНА ТОВАРА</h3>
+                        <div class="form-group">
+                            <label style="color:#b9d2a5;">📦 Выберите товар:</label>
+                            <select id="cancelProductSelect" style="width:100%; padding:10px; border-radius:40px; font-size:1rem;"></select>
+                        </div>
+                        <div class="form-group">
+                            <label style="color:#b9d2a5;">🔢 Количество для отмены:</label>
+                            <input type="number" id="cancelQuantity" value="1" min="1" step="1" style="width:100%; padding:10px; border-radius:40px; font-size:1rem;">
+                        </div>
+                        <div class="form-group">
+                            <label style="color:#b9d2a5;">💰 Сумма отмены:</label>
+                            <input type="text" id="cancelAmount" readonly style="width:100%; padding:10px; border-radius:40px; background:#f0f4f9; font-size:1rem;">
+                        </div>
+                        <div style="display:flex; gap:10px; margin-top:16px;">
+                            <button onclick="confirmCancel()" class="btn-success" style="flex:1; padding:12px;">✅ ОТМЕНИТЬ</button>
+                            <button onclick="closeCancelModal()" class="btn-warning" style="flex:1; padding:12px;">❌ ОТМЕНА</button>
+                        </div>
+                    </div>
+                </div>
+                
                 <div style="margin-top:16px; padding-top:16px; border-top:2px solid #eef2f8;">
                     <label style="font-weight:600; margin-bottom:10px; display:block;">💳 Способ оплаты:</label>
                     <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
