@@ -81,6 +81,8 @@
                 <button class="tab-btn" data-tab="client-shop" onclick="switchClientTab('shop')">🏪 Магазин</button>
                 <button class="tab-btn" data-tab="client-card" onclick="switchClientTab('card')">📱 Карта</button>
                 <button class="tab-btn" data-tab="client-history" onclick="switchClientTab('history')">📜 История</button>
+                <button class="tab-btn" data-tab="client-courier" onclick="switchClientTab('courier')">🚚 Курьер</button>
+                <button class="tab-btn" data-tab="client-support" onclick="switchClientTab('support')">🆘 Поддержка</button>
             </div>
 
             <!-- Профиль -->
@@ -153,6 +155,39 @@
                 <div class="card">
                     <div class="card-title">📜 История покупок</div>
                     <div id="clientHistory"><div class="loading-spinner">Загрузка...</div></div>
+                </div>
+            </div>
+
+            <!-- Курьер -->
+            <div id="client-courier" class="tab-content" style="display:none;">
+                <div class="card">
+                    <div class="card-title">🚚 Заказ курьера</div>
+                    <div class="form-group">
+                        <label>Выберите товары</label>
+                        <div id="courierProductsList" style="max-height:200px; overflow-y:auto; border:1px solid #eef2f8; border-radius:16px; padding:8px;">
+                            <div class="loading-spinner">Загрузка товаров...</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>📍 Адрес доставки</label>
+                        <input type="text" id="courierAddress" placeholder="ул. Ленина, д. 15, кв. 10">
+                    </div>
+                    <button onclick="submitCourierOrder()" class="btn-success" style="width:100%;">🚚 Заказать доставку</button>
+                    <div id="courierOrdersList" style="margin-top:16px; max-height:200px; overflow-y:auto;"></div>
+                </div>
+            </div>
+
+            <!-- Поддержка -->
+            <div id="client-support" class="tab-content" style="display:none;">
+                <div class="card">
+                    <div class="card-title">🆘 Поддержка</div>
+                    <div id="supportMessages" style="max-height:300px; overflow-y:auto; margin-bottom:12px; border:1px solid #eef2f8; border-radius:16px; padding:12px;">
+                        <div class="empty-state">Нет сообщений</div>
+                    </div>
+                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                        <input type="text" id="supportMessageInput" placeholder="Введите сообщение..." style="flex:2; min-width:200px;">
+                        <button onclick="sendSupportMessage()" class="btn-success">📨 Отправить</button>
+                    </div>
                 </div>
             </div>
         </div>
