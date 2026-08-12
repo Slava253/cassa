@@ -38,6 +38,14 @@
                         <div class="role-icon">👤</div>
                         <div class="role-name">Клиент</div>
                     </div>
+                    <div class="role-oval" data-role="courier" onclick="selectRole('courier')">
+                        <div class="role-icon">🚚</div>
+                        <div class="role-name">Курьер</div>
+                    </div>
+                    <div class="role-oval" data-role="support" onclick="selectRole('support')">
+                        <div class="role-icon">🆘</div>
+                        <div class="role-name">Поддержка</div>
+                    </div>
                 </div>
 
                 <div id="adminLogin" class="login-form">
@@ -86,6 +94,30 @@
                     </div>
                     <button onclick="clientLogin()" class="btn-login">👤 Войти</button>
                 </div>
+
+                <div id="courierLogin" class="login-form" style="display:none;">
+                    <div class="form-group">
+                        <label>👤 Логин курьера</label>
+                        <input type="text" id="courierLoginInput" placeholder="Введите логин">
+                    </div>
+                    <div class="form-group">
+                        <label>🔒 Пароль</label>
+                        <input type="password" id="courierPasswordInput" placeholder="Введите пароль">
+                    </div>
+                    <button onclick="courierLogin()" class="btn-login">🚚 Войти</button>
+                </div>
+
+                <div id="supportLogin" class="login-form" style="display:none;">
+                    <div class="form-group">
+                        <label>👤 Логин поддержки</label>
+                        <input type="text" id="supportLoginInput" placeholder="Введите логин">
+                    </div>
+                    <div class="form-group">
+                        <label>🔒 Пароль</label>
+                        <input type="password" id="supportPasswordInput" placeholder="Введите пароль">
+                    </div>
+                    <button onclick="supportLogin()" class="btn-login">🆘 Войти</button>
+                </div>
             </div>
         </div>
     </div>
@@ -104,6 +136,8 @@
             document.getElementById('adminLogin').style.display = role === 'admin' ? 'block' : 'none';
             document.getElementById('cashierLogin').style.display = role === 'cashier' ? 'block' : 'none';
             document.getElementById('clientLogin').style.display = role === 'client' ? 'block' : 'none';
+            document.getElementById('courierLogin').style.display = role === 'courier' ? 'block' : 'none';
+            document.getElementById('supportLogin').style.display = role === 'support' ? 'block' : 'none';
             
             if (role === 'cashier' || role === 'client') {
                 loadStores(role);
@@ -145,6 +179,8 @@
                 if (user.role === 'admin') window.location.href = 'admin.html';
                 else if (user.role === 'cashier') window.location.href = 'cashier.html';
                 else if (user.role === 'client') window.location.href = 'client.html';
+                else if (user.role === 'courier') window.location.href = 'courier.html';
+                else if (user.role === 'support') window.location.href = 'support.html';
             } catch(e) { localStorage.removeItem('shop_user'); }
         }
     </script>
