@@ -26,14 +26,14 @@ function loadSupportMessages() {
             html += `
                 <div class="member-item">
                     <div>
-                        <strong>${m.clientName || 'Клиент'}</strong>
+                        <strong>👤 ${m.clientName || 'Клиент'}</strong>
                         <span style="font-size:0.7rem; color:#7a8a9e; display:block;">📱 ${m.clientPhone || 'Не указан'}</span>
                         <span style="font-size:0.8rem; display:block;">💬 ${m.message}</span>
                         <span style="font-size:0.7rem; color:#7a8a9e;">📅 ${m.date}</span>
                         <span class="badge" style="background:#f6b83d;">${m.status}</span>
                     </div>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <input type="text" id="response_${key}" placeholder="Ответ..." style="flex:1; min-width:150px;">
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                        <input type="text" id="response_${key}" placeholder="Введите ответ..." style="flex:2; min-width:150px;">
                         <button onclick="sendResponse('${key}')" class="btn-success">📨 Ответить</button>
                         <button onclick="closeSupport('${key}')" class="btn-warning">✅ Закрыть</button>
                     </div>
@@ -53,21 +53,48 @@ function sendResponse(id) {
     
     db.ref('support_messages/' + id).update({
         response: response,
-        status: 'Отвечено'
+        status: 'Отвечено',
+        responseDate: new Date().toLocaleString('ru-RU'),
+        supportName: user.fullName
     }).then(() => {
-        showToast('✅ Ответ отправлен');
+        showToast('✅ Ответ отправлен клиенту');
         document.getElementById('response_' + id).value = '';
+        // Перезагружаем список
         loadSupportMessages();
+        // Обновляем сообщения у клиента
+        updateClientSupportMessages(id, response);
     }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+}
+
+function updateClientSupportMessages(id, response) {
+    // Получаем данные сообщения
+    db.ref('support_messages/' + id).once('value', snap => {
+        const data = snap.val();
+        if (data && data.clientId) {
+            // Обновляем в клиентских сообщениях (если клиент онлайн)
+            // Это будет отображаться при следующей загрузке
+        }
+    });
 }
 
 function closeSupport(id) {
     if (!confirm('Закрыть обращение?')) return;
     
     db.ref('support_messages/' + id).update({
-        status: 'Закрыто'
+        status: 'Закрыто',
+        closedDate: new Date().toLocaleString('ru-RU')
     }).then(() => {
         showToast('✅ Обращение закрыто');
         loadSupportMessages();
     });
+}
+
+function showToast(msg, isError = false) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    toast.style.background = isError ? '#b33a34' : '#1d6f2c';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.style.display = 'none', 2500);
 }
