@@ -31,7 +31,6 @@ function cashierLogin() {
         return;
     }
     
-    // Ищем кассира по номеру карты и паролю в выбранном магазине
     db.ref('stores/' + storeId + '/cashiers').orderByChild('cardNumber').equalTo(cardNumber).once('value', snap => {
         const cashiers = snap.val();
         let found = null;
@@ -61,9 +60,6 @@ function cashierLogin() {
         } else {
             showToast('❌ Неверный номер карты или пароль', true);
         }
-    }).catch(err => {
-        console.error('Ошибка входа кассира:', err);
-        showToast('❌ Ошибка входа', true);
     });
 }
 
@@ -80,17 +76,14 @@ function clientLogin() {
         return;
     }
     
-    // Удаляем +7 если есть
     let cleanPhone = phone.replace(/^\+7/, '').replace(/\D/g, '');
     if (cleanPhone.length < 10) {
         showToast('❌ Введите корректный номер телефона (10 цифр)', true);
         return;
     }
     
-    // Формируем полный номер
     const fullPhone = '+7' + cleanPhone;
     
-    // Ищем клиента по телефону
     db.ref('clients').orderByChild('phone').equalTo(fullPhone).once('value', snap => {
         const clients = snap.val();
         let found = null;
@@ -121,9 +114,66 @@ function clientLogin() {
         } else {
             showToast('❌ Клиент с таким номером не найден', true);
         }
-    }).catch(err => {
-        console.error('Ошибка входа клиента:', err);
-        showToast('❌ Ошибка входа', true);
+    });
+}
+
+function courierLogin() {
+    const login = document.getElementById('courierLoginInput').value.trim();
+    const password = document.getElementById('courierPasswordInput').value.trim();
+    
+    if (!login || !password) {
+        showToast('❌ Введите логин и пароль', true);
+        return;
+    }
+    
+    db.ref('couriers').orderByChild('login').equalTo(login).once('value', snap => {
+        const couriers = snap.val();
+        let found = null;
+        for (let key in couriers) {
+            const c = couriers[key];
+            if (c.login === login && c.password === password) {
+                found = { id: key, ...c };
+                break;
+            }
+        }
+        
+        if (found) {
+            const user = { ...found, role: 'courier' };
+            localStorage.setItem('shop_user', JSON.stringify(user));
+            window.location.href = 'courier.html';
+        } else {
+            showToast('❌ Неверный логин или пароль', true);
+        }
+    });
+}
+
+function supportLogin() {
+    const login = document.getElementById('supportLoginInput').value.trim();
+    const password = document.getElementById('supportPasswordInput').value.trim();
+    
+    if (!login || !password) {
+        showToast('❌ Введите логин и пароль', true);
+        return;
+    }
+    
+    db.ref('support').orderByChild('login').equalTo(login).once('value', snap => {
+        const support = snap.val();
+        let found = null;
+        for (let key in support) {
+            const s = support[key];
+            if (s.login === login && s.password === password) {
+                found = { id: key, ...s };
+                break;
+            }
+        }
+        
+        if (found) {
+            const user = { ...found, role: 'support' };
+            localStorage.setItem('shop_user', JSON.stringify(user));
+            window.location.href = 'support.html';
+        } else {
+            showToast('❌ Неверный логин или пароль', true);
+        }
     });
 }
 
