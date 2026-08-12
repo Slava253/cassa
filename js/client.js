@@ -526,11 +526,171 @@ function loadClientPromotions() {
     });
 }
 
+// ===== КУРЬЕР =====
+function loadCourierProducts() {
+    const container = document.getElementById('courierProductsList');
+    container.innerHTML = '<div class="loading-spinner">Загрузка товаров...</div>';
+    
+    if (!selectedStoreId) {
+        container.innerHTML = '<div class="empty-state">Сначала выберите магазин</div>';
+        return;
+    }
+    
+    db.ref('stores/' + selectedStoreId + '/products').limitToFirst(50).once('value', snap => {
+        const products = snap.val();
+        if (!products) {
+            container.innerHTML = '<div class="empty-state">Нет товаров</div>';
+            return;
+        }
+        let html = '';
+        for (let key in products) {
+            const p = products[key];
+            html += `
+                <div style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #eef2f8;">
+                    <input type="checkbox" id="product_${key}" value="${p.barcode}" data-name="${p.name}" data-price="${p.price}">
+                    <label for="product_${key}" style="font-weight:normal; cursor:pointer; margin:0; flex:1;">
+                        ${p.name} - ${p.price} ₽
+                    </label>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    });
+}
+
+function submitCourierOrder() {
+    const checkboxes = document.querySelectorAll('#courierProductsList input[type="checkbox"]:checked');
+    const address = document.getElementById('courierAddress').value.trim();
+    
+    if (checkboxes.length === 0) {
+        showToast('❌ Выберите хотя бы один товар', true);
+        return;
+    }
+    if (!address) {
+        showToast('❌ Введите адрес доставки', true);
+        document.getElementById('courierAddress').focus();
+        return;
+    }
+    
+    const items = [];
+    let total = 0;
+    checkboxes.forEach(cb => {
+        const name = cb.dataset.name;
+        const price = parseFloat(cb.dataset.price);
+        items.push(name);
+        total += price;
+    });
+    
+    const order = {
+        clientId: user.id,
+        clientName: user.nickname || user.fullName,
+        clientPhone: user.phone,
+        items: items.join(', '),
+        total: total,
+        address: address,
+        storeId: selectedStoreId,
+        storeName: selectedStoreName,
+        date: new Date().toLocaleString('ru-RU'),
+        status: 'Новый',
+        courierId: null
+    };
+    
+    db.ref('courier_orders').push(order).then(() => {
+        showToast(`✅ Заказ отправлен! Сумма: ${total} ₽`);
+        document.getElementById('courierAddress').value = '';
+        document.querySelectorAll('#courierProductsList input[type="checkbox"]').forEach(cb => cb.checked = false);
+        loadCourierOrders();
+    }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+}
+
+function loadCourierOrders() {
+    const container = document.getElementById('courierOrdersList');
+    if (!user) return;
+    
+    db.ref('courier_orders').orderByChild('clientId').equalTo(user.id).once('value', snap => {
+        const data = snap.val();
+        if (!data) {
+            container.innerHTML = '<div class="empty-state">Нет заказов</div>';
+            return;
+        }
+        let html = '';
+        for (let key in data) {
+            const o = data[key];
+            html += `
+                <div class="history-item">
+                    <div>
+                        <strong>${o.items}</strong>
+                        <span style="font-size:0.7rem; color:#7a8a9e; display:block;">${o.address}</span>
+                        <span style="font-size:0.7rem; color:#7a8a9e;">${o.date}</span>
+                    </div>
+                    <div style="text-align:right;">
+                        <div><strong>${o.total} ₽</strong></div>
+                        <span class="badge" style="background:${o.status === 'Доставлен' ? '#1d6f2c' : '#f6b83d'};">${o.status}</span>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    });
+}
+
+// ===== ПОДДЕРЖКА =====
+function sendSupportMessage() {
+    const message = document.getElementById('supportMessageInput').value.trim();
+    if (!message) {
+        showToast('❌ Введите сообщение', true);
+        return;
+    }
+    
+    const data = {
+        clientId: user.id,
+        clientName: user.nickname || user.fullName,
+        clientPhone: user.phone,
+        message: message,
+        date: new Date().toLocaleString('ru-RU'),
+        status: 'Новое'
+    };
+    
+    db.ref('support_messages').push(data).then(() => {
+        showToast('✅ Сообщение отправлено в поддержку');
+        document.getElementById('supportMessageInput').value = '';
+        loadSupportMessages();
+    }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+}
+
+function loadSupportMessages() {
+    const container = document.getElementById('supportMessages');
+    if (!user) return;
+    
+    db.ref('support_messages').orderByChild('clientId').equalTo(user.id).once('value', snap => {
+        const data = snap.val();
+        if (!data) {
+            container.innerHTML = '<div class="empty-state">Нет сообщений</div>';
+            return;
+        }
+        let html = '';
+        for (let key in data) {
+            const m = data[key];
+            const isClient = m.clientId === user.id;
+            html += `
+                <div style="margin-bottom:8px; ${isClient ? 'text-align:right;' : ''}">
+                    <div style="display:inline-block; background:${isClient ? '#1a1a2e' : '#eef2f8'}; color:${isClient ? 'white' : '#1a1a2e'}; padding:8px 12px; border-radius:16px; max-width:80%;">
+                        ${m.message}
+                        <div style="font-size:0.6rem; opacity:0.6; margin-top:4px;">${m.date}</div>
+                    </div>
+                    ${m.response ? `<div style="font-size:0.7rem; color:#1d6f2c; margin-top:2px;">✅ ${m.response}</div>` : ''}
+                </div>
+            `;
+        }
+        container.innerHTML = html || '<div class="empty-state">Нет сообщений</div>';
+    });
+}
+
 // ===== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК =====
 function switchClientTab(tab) {
     if (scannerInitialized) stopCameraScanner();
     
-    const tabs = ['profile', 'promotions', 'shop', 'card', 'history'];
+    const tabs = ['profile', 'promotions', 'shop', 'card', 'history', 'courier', 'support'];
     tabs.forEach(t => {
         const el = document.getElementById('client-' + t);
         if (el) el.style.display = t === tab ? 'block' : 'none';
@@ -546,6 +706,11 @@ function switchClientTab(tab) {
     if (tab === 'shop' && selectedStoreId) loadStoreProductsLite();
     if (tab === 'history') loadClientHistoryLite();
     if (tab === 'promotions') loadClientPromotions();
+    if (tab === 'courier') {
+        loadCourierProducts();
+        loadCourierOrders();
+    }
+    if (tab === 'support') loadSupportMessages();
 }
 
 // ===== СОХРАНЕНИЕ НИКНЕЙМА =====
