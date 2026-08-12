@@ -80,8 +80,68 @@
                 <div id="cashiersList"><div class="loading-spinner">Загрузка...</div></div>
             </div>
 
-            <!-- Создать акцию -->
+            <!-- Добавить курьера -->
             <div class="card" style="border: 2px solid #1d6f2c;">
+                <div class="card-title">🚚 Добавить курьера</div>
+                <div class="grid-2col">
+                    <div>
+                        <div class="form-group">
+                            <label>👤 ФИО курьера</label>
+                            <input type="text" id="courierFullName" placeholder="Сидоров Сидор Сидорович">
+                        </div>
+                        <div class="form-group">
+                            <label>🔑 Логин курьера</label>
+                            <input type="text" id="courierLogin" placeholder="courier123">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>🔒 Пароль курьера</label>
+                            <input type="text" id="courierPassword" placeholder="123456">
+                        </div>
+                    </div>
+                </div>
+                <button onclick="addCourier()" class="btn-success" style="width:100%;">🚚 Добавить курьера</button>
+            </div>
+
+            <!-- Список курьеров -->
+            <div class="card">
+                <div class="card-title">📋 Список курьеров</div>
+                <div id="couriersList"><div class="loading-spinner">Загрузка...</div></div>
+            </div>
+
+            <!-- Добавить сотрудника поддержки -->
+            <div class="card" style="border: 2px solid #d4a13e;">
+                <div class="card-title">🆘 Добавить сотрудника поддержки</div>
+                <div class="grid-2col">
+                    <div>
+                        <div class="form-group">
+                            <label>👤 ФИО сотрудника</label>
+                            <input type="text" id="supportFullName" placeholder="Петрова Анна Сергеевна">
+                        </div>
+                        <div class="form-group">
+                            <label>🔑 Логин поддержки</label>
+                            <input type="text" id="supportLogin" placeholder="support123">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>🔒 Пароль поддержки</label>
+                            <input type="text" id="supportPassword" placeholder="123456">
+                        </div>
+                    </div>
+                </div>
+                <button onclick="addSupport()" class="btn-warning" style="width:100%;">🆘 Добавить сотрудника поддержки</button>
+            </div>
+
+            <!-- Список поддержки -->
+            <div class="card">
+                <div class="card-title">📋 Сотрудники поддержки</div>
+                <div id="supportList"><div class="loading-spinner">Загрузка...</div></div>
+            </div>
+
+            <!-- Создать акцию -->
+            <div class="card" style="border: 2px solid #f6b83d;">
                 <div class="card-title">🎉 Создать акцию</div>
                 <div class="grid-2col">
                     <div>
@@ -114,7 +174,6 @@
                     </div>
                 </div>
                 
-                <!-- НОВЫЙ БЛОК: ВАЛЮТА НАКОПЛЕНИЯ -->
                 <div class="grid-2col" style="margin-top:12px; padding-top:12px; border-top:2px solid #eef2f8;">
                     <div class="form-group">
                         <label>💰 Валюта накопления</label>
