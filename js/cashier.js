@@ -42,13 +42,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('cashierName').innerHTML = `👤 ${user.fullName}`;
     document.getElementById('cashierStoreDisplay').innerHTML = `🏪 ${storeName}`;
     
-    // Загружаем данные
     loadCashierHistory();
     updateCartUI();
     updateWeightProducts();
     cleanOldHistory();
     
-    // Обработчики Enter для добавления товара
+    // Обработчики Enter
     document.getElementById('newProductBarcode').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') document.getElementById('newProductName').focus();
     });
@@ -61,8 +60,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('newProductDiscountPrice').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') addNewProduct();
     });
-    
-    // Enter для сканирования товара в корзину
     document.getElementById('cartBarcodeInput').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') addToCart();
     });
@@ -74,19 +71,14 @@ function playOrderSound() {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
-        
         oscillator.connect(gainNode);
         gainNode.connect(audioCtx.destination);
-        
         oscillator.frequency.value = 880;
         oscillator.type = 'sine';
-        
         gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-        
         oscillator.start();
         oscillator.stop(audioCtx.currentTime + 0.2);
-        
         setTimeout(() => {
             const osc2 = audioCtx.createOscillator();
             const gain2 = audioCtx.createGain();
@@ -99,9 +91,82 @@ function playOrderSound() {
             osc2.start();
             osc2.stop(audioCtx.currentTime + 0.15);
         }, 150);
-    } catch(e) {
-        console.log('Звук не поддерживается');
+    } catch(e) {}
+}
+
+// ===== ОТМЕНА ТОВАРА =====
+function openCancelModal() {
+    if (currentCart.length === 0) {
+        showToast('❌ Корзина пуста! Нечего отменять.', true);
+        return;
     }
+    
+    const modal = document.getElementById('cancelModal');
+    const select = document.getElementById('cancelProductSelect');
+    select.innerHTML = '';
+    
+    currentCart.forEach((item, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        const unit = item.isWeight ? (item.unit || 'кг') : 'шт';
+        const qty = item.isWeight ? item.quantity.toFixed(2) : item.quantity;
+        option.textContent = `${item.name} - ${qty} ${unit} по ${item.price.toFixed(2)} ₽ (всего ${(item.price * item.quantity).toFixed(2)} ₽)`;
+        select.appendChild(option);
+    });
+    
+    document.getElementById('cancelQuantity').value = 1;
+    document.getElementById('cancelQuantity').max = currentCart[0]?.quantity || 1;
+    updateCancelAmount();
+    modal.style.display = 'flex';
+}
+
+function closeCancelModal() {
+    document.getElementById('cancelModal').style.display = 'none';
+}
+
+function updateCancelAmount() {
+    const select = document.getElementById('cancelProductSelect');
+    const quantity = parseFloat(document.getElementById('cancelQuantity').value) || 1;
+    const selectedIndex = parseInt(select.value);
+    
+    if (!isNaN(selectedIndex) && currentCart[selectedIndex]) {
+        const item = currentCart[selectedIndex];
+        const maxQty = item.quantity;
+        const cancelQty = Math.min(quantity, maxQty);
+        const amount = item.price * cancelQty;
+        document.getElementById('cancelAmount').value = amount.toFixed(2) + ' ₽';
+        document.getElementById('cancelQuantity').max = maxQty;
+        if (quantity > maxQty) {
+            document.getElementById('cancelQuantity').value = maxQty;
+            updateCancelAmount();
+        }
+    }
+}
+
+function confirmCancel() {
+    const select = document.getElementById('cancelProductSelect');
+    const quantity = parseFloat(document.getElementById('cancelQuantity').value) || 1;
+    const selectedIndex = parseInt(select.value);
+    
+    if (isNaN(selectedIndex) || !currentCart[selectedIndex]) {
+        showToast('❌ Выберите товар для отмены!', true);
+        return;
+    }
+    
+    const item = currentCart[selectedIndex];
+    const cancelQty = Math.min(quantity, item.quantity);
+    const amount = item.price * cancelQty;
+    
+    if (cancelQty >= item.quantity) {
+        currentCart.splice(selectedIndex, 1);
+        showToast(`🔄 Отменён товар "${item.name}" в количестве ${cancelQty} шт. на сумму ${amount.toFixed(2)} ₽`);
+    } else {
+        item.quantity -= cancelQty;
+        showToast(`🔄 Отменено ${cancelQty} шт. товара "${item.name}" на сумму ${amount.toFixed(2)} ₽. Осталось: ${item.quantity} шт.`);
+    }
+    
+    closeCancelModal();
+    updateCartUI();
 }
 
 // ===== ДОБАВЛЕНИЕ ТОВАРА В СИСТЕМУ =====
@@ -147,15 +212,10 @@ function addNewProduct() {
             statusDiv.style.color = '#b33a34';
             return;
         }
-        
         const productData = {
-            barcode: barcode,
-            name: name,
-            price: price,
-            discountPrice: discountPrice,
+            barcode, name, price, discountPrice,
             createdAt: new Date().toISOString()
         };
-        
         return db.ref('stores/' + storeId + '/products').push(productData);
     })
     .then(() => {
@@ -192,9 +252,7 @@ function cleanOldHistory() {
                 }
             }
         }
-        if (Object.keys(updates).length > 0) {
-            db.ref().update(updates);
-        }
+        if (Object.keys(updates).length > 0) db.ref().update(updates);
     });
 }
 
@@ -231,8 +289,7 @@ function loadCashierHistory() {
             `;
         });
         container.innerHTML = html;
-    }).catch(err => {
-        console.error('Ошибка загрузки истории:', err);
+    }).catch(() => {
         container.innerHTML = '<div class="empty-state">Ошибка загрузки</div>';
     });
 }
@@ -263,10 +320,7 @@ function searchProduct() {
             document.getElementById('editName').value = product.name;
             document.getElementById('editPrice').value = product.price;
             document.getElementById('editDiscountPrice').value = product.discountPrice;
-            
-            resultDiv.innerHTML = `
-                <div style="color:#1d6f2c; padding:8px;">✅ Товар найден: ${product.name}</div>
-            `;
+            resultDiv.innerHTML = `<div style="color:#1d6f2c; padding:8px;">✅ Товар найден: ${product.name}</div>`;
         } else {
             resultDiv.innerHTML = `<div style="color:#b33a34; padding:8px;">❌ Товар не найден</div>`;
             clearProductEdit();
