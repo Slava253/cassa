@@ -113,7 +113,7 @@ function loadStoreSelects() {
 function addCashier() {
     const storeId = document.getElementById('cashierStoreSelect').value;
     const fullName = document.getElementById('cashierFullName').value.trim();
-    const cardNumber = document.getElementById('cashierCardNumber').value.trim();
+    const login = document.getElementById('cashierLogin').value.trim();
     const password = document.getElementById('cashierPassword').value.trim();
     
     if (!storeId) {
@@ -126,9 +126,9 @@ function addCashier() {
         document.getElementById('cashierFullName').focus();
         return;
     }
-    if (!cardNumber) {
-        showToast('❌ Введите номер карты кассира', true);
-        document.getElementById('cashierCardNumber').focus();
+    if (!login) {
+        showToast('❌ Введите логин кассира', true);
+        document.getElementById('cashierLogin').focus();
         return;
     }
     if (!password) {
@@ -143,24 +143,24 @@ function addCashier() {
             return;
         }
         
-        db.ref('stores/' + storeId + '/cashiers').orderByChild('cardNumber').equalTo(cardNumber).once('value', snap2 => {
+        db.ref('stores/' + storeId + '/cashiers').orderByChild('login').equalTo(login).once('value', snap2 => {
             if (snap2.exists()) {
-                showToast('❌ Кассир с таким номером карты уже есть в этом магазине!', true);
+                showToast('❌ Кассир с таким логином уже есть в этом магазине!', true);
                 return;
             }
             
             const data = { 
                 fullName: fullName, 
-                cardNumber: cardNumber, 
+                login: login, 
                 password: password, 
                 createdAt: new Date().toISOString() 
             };
             
             db.ref('stores/' + storeId + '/cashiers').push(data).then(() => {
                 document.getElementById('cashierFullName').value = '';
-                document.getElementById('cashierCardNumber').value = '';
+                document.getElementById('cashierLogin').value = '';
                 document.getElementById('cashierPassword').value = '';
-                showToast(`✅ Кассир ${fullName} добавлен! Номер карты: ${cardNumber}`);
+                showToast(`✅ Кассир ${fullName} добавлен! Логин: ${login}`);
                 loadCashiers();
                 loadStores();
             }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
@@ -198,7 +198,7 @@ function loadCashiers() {
                         <div class="member-info">
                             <div>
                                 <strong>${c.fullName}</strong><br>
-                                <span class="badge">🎫 ${c.cardNumber}</span>
+                                <span class="badge">🔑 ${c.login}</span>
                                 <span style="font-size:0.7rem;color:#3e5f7e;">🔒 ${c.password}</span>
                             </div>
                         </div>
@@ -553,7 +553,6 @@ function deletePromotion(id) {
     });
 }
 
-// ===== TOAST =====
 function showToast(msg, isError = false) {
     const toast = document.getElementById('toast');
     if (!toast) return;
