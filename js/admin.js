@@ -116,6 +116,7 @@ function addCashier() {
     const login = document.getElementById('cashierLogin').value.trim();
     const password = document.getElementById('cashierPassword').value.trim();
     
+    // Проверка заполнения полей
     if (!storeId) {
         showToast('❌ Выберите магазин!', true);
         document.getElementById('cashierStoreSelect').focus();
@@ -137,15 +138,18 @@ function addCashier() {
         return;
     }
     
+    // Проверяем, существует ли магазин
     db.ref('stores/' + storeId).once('value', snap => {
         if (!snap.exists()) {
             showToast('❌ Магазин не найден!', true);
             return;
         }
         
+        // Проверяем уникальность логина в магазине
         db.ref('stores/' + storeId + '/cashiers').orderByChild('login').equalTo(login).once('value', snap2 => {
             if (snap2.exists()) {
                 showToast('❌ Кассир с таким логином уже есть в этом магазине!', true);
+                document.getElementById('cashierLogin').focus();
                 return;
             }
             
@@ -156,15 +160,23 @@ function addCashier() {
                 createdAt: new Date().toISOString() 
             };
             
-            db.ref('stores/' + storeId + '/cashiers').push(data).then(() => {
+            db.ref('stores/' + storeId + '/cashiers').push(data)
+            .then(() => {
                 document.getElementById('cashierFullName').value = '';
                 document.getElementById('cashierLogin').value = '';
                 document.getElementById('cashierPassword').value = '';
                 showToast(`✅ Кассир ${fullName} добавлен! Логин: ${login}`);
                 loadCashiers();
                 loadStores();
-            }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+            })
+            .catch(err => {
+                console.error('Ошибка добавления кассира:', err);
+                showToast('❌ Ошибка: ' + err.message, true);
+            });
         });
+    }).catch(err => {
+        console.error('Ошибка проверки магазина:', err);
+        showToast('❌ Ошибка: ' + err.message, true);
     });
 }
 
