@@ -15,6 +15,7 @@ let originalTotal = 0;
 let editingProductKey = null;
 let historyCache = [];
 let productsCache = {};
+let returnProductData = null;
 
 const storeId = user.storeId;
 const storeName = user.storeName || 'Магазин';
@@ -63,6 +64,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('cartBarcodeInput').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') addToCart();
     });
+    
+    // Обработчик Enter для возврата
+    document.getElementById('returnBarcodeInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchReturnProduct();
+        }
+    });
 });
 
 // ===== ЗВУК ПРИ ДОБАВЛЕНИИ ЗАКАЗА =====
@@ -94,78 +102,80 @@ function playOrderSound() {
     } catch(e) {}
 }
 
-// ===== ОТМЕНА ТОВАРА =====
-function openCancelModal() {
-    if (currentCart.length === 0) {
-        showToast('❌ Корзина пуста! Нечего отменять.', true);
+// ===== ВОЗВРАТ ТОВАРА ПО ШТРИХКОДУ =====
+function openReturnModal() {
+    document.getElementById('returnModal').style.display = 'flex';
+    document.getElementById('returnBarcodeInput').value = '';
+    document.getElementById('returnProductInfo').style.display = 'none';
+    document.getElementById('returnQuantity').value = 1;
+    document.getElementById('returnAmount').value = '';
+    returnProductData = null;
+    document.getElementById('returnBarcodeInput').focus();
+}
+
+function closeReturnModal() {
+    document.getElementById('returnModal').style.display = 'none';
+    returnProductData = null;
+}
+
+function searchReturnProduct() {
+    const barcode = document.getElementById('returnBarcodeInput').value.trim();
+    if (!barcode) {
+        showToast('❌ Введите или отсканируйте штрихкод товара', true);
         return;
     }
     
-    const modal = document.getElementById('cancelModal');
-    const select = document.getElementById('cancelProductSelect');
-    select.innerHTML = '';
-    
-    currentCart.forEach((item, index) => {
-        const option = document.createElement('option');
-        option.value = index;
-        const unit = item.isWeight ? (item.unit || 'кг') : 'шт';
-        const qty = item.isWeight ? item.quantity.toFixed(2) : item.quantity;
-        option.textContent = `${item.name} - ${qty} ${unit} по ${item.price.toFixed(2)} ₽ (всего ${(item.price * item.quantity).toFixed(2)} ₽)`;
-        select.appendChild(option);
-    });
-    
-    document.getElementById('cancelQuantity').value = 1;
-    document.getElementById('cancelQuantity').max = currentCart[0]?.quantity || 1;
-    updateCancelAmount();
-    modal.style.display = 'flex';
-}
-
-function closeCancelModal() {
-    document.getElementById('cancelModal').style.display = 'none';
-}
-
-function updateCancelAmount() {
-    const select = document.getElementById('cancelProductSelect');
-    const quantity = parseFloat(document.getElementById('cancelQuantity').value) || 1;
-    const selectedIndex = parseInt(select.value);
-    
-    if (!isNaN(selectedIndex) && currentCart[selectedIndex]) {
-        const item = currentCart[selectedIndex];
-        const maxQty = item.quantity;
-        const cancelQty = Math.min(quantity, maxQty);
-        const amount = item.price * cancelQty;
-        document.getElementById('cancelAmount').value = amount.toFixed(2) + ' ₽';
-        document.getElementById('cancelQuantity').max = maxQty;
-        if (quantity > maxQty) {
-            document.getElementById('cancelQuantity').value = maxQty;
-            updateCancelAmount();
-        }
-    }
-}
-
-function confirmCancel() {
-    const select = document.getElementById('cancelProductSelect');
-    const quantity = parseFloat(document.getElementById('cancelQuantity').value) || 1;
-    const selectedIndex = parseInt(select.value);
-    
-    if (isNaN(selectedIndex) || !currentCart[selectedIndex]) {
-        showToast('❌ Выберите товар для отмены!', true);
+    // Ищем товар в корзине
+    const cartItem = currentCart.find(item => item.barcode === barcode);
+    if (!cartItem) {
+        showToast('❌ Товар с таким штрихкодом не найден в корзине!', true);
+        document.getElementById('returnProductInfo').style.display = 'none';
         return;
     }
     
-    const item = currentCart[selectedIndex];
-    const cancelQty = Math.min(quantity, item.quantity);
-    const amount = item.price * cancelQty;
+    returnProductData = cartItem;
+    document.getElementById('returnProductName').textContent = cartItem.name;
+    document.getElementById('returnProductPrice').textContent = cartItem.price.toFixed(2);
+    document.getElementById('returnProductQty').textContent = cartItem.quantity;
+    document.getElementById('returnProductInfo').style.display = 'block';
+    document.getElementById('returnQuantity').max = cartItem.quantity;
+    document.getElementById('returnQuantity').value = 1;
+    updateReturnAmount();
+}
+
+function updateReturnAmount() {
+    if (!returnProductData) return;
+    const quantity = parseInt(document.getElementById('returnQuantity').value) || 1;
+    const maxQty = returnProductData.quantity;
+    const cancelQty = Math.min(quantity, maxQty);
+    const amount = returnProductData.price * cancelQty;
+    document.getElementById('returnAmount').value = amount.toFixed(2) + ' ₽';
+    if (quantity > maxQty) {
+        document.getElementById('returnQuantity').value = maxQty;
+        updateReturnAmount();
+    }
+}
+
+function confirmReturn() {
+    if (!returnProductData) {
+        showToast('❌ Сначала найдите товар по штрихкоду!', true);
+        return;
+    }
     
-    if (cancelQty >= item.quantity) {
-        currentCart.splice(selectedIndex, 1);
-        showToast(`🔄 Отменён товар "${item.name}" в количестве ${cancelQty} шт. на сумму ${amount.toFixed(2)} ₽`);
+    const quantity = parseInt(document.getElementById('returnQuantity').value) || 1;
+    const cancelQty = Math.min(quantity, returnProductData.quantity);
+    const amount = returnProductData.price * cancelQty;
+    
+    if (cancelQty >= returnProductData.quantity) {
+        const index = currentCart.indexOf(returnProductData);
+        currentCart.splice(index, 1);
+        showToast(`🔄 Возврат товара "${returnProductData.name}" в количестве ${cancelQty} шт. на сумму ${amount.toFixed(2)} ₽`);
     } else {
-        item.quantity -= cancelQty;
-        showToast(`🔄 Отменено ${cancelQty} шт. товара "${item.name}" на сумму ${amount.toFixed(2)} ₽. Осталось: ${item.quantity} шт.`);
+        returnProductData.quantity -= cancelQty;
+        showToast(`🔄 Возврат ${cancelQty} шт. товара "${returnProductData.name}" на сумму ${amount.toFixed(2)} ₽. Осталось: ${returnProductData.quantity} шт.`);
     }
     
-    closeCancelModal();
+    closeReturnModal();
     updateCartUI();
 }
 
