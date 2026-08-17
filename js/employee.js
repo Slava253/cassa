@@ -6,12 +6,12 @@ if (!user || user.role !== 'employee') {
 }
 
 let currentClient = null;
-let currentOrders = [];
 let foundProduct = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('employeeName').innerHTML = `👤 ${user.fullName}`;
     
+    // Обработчики Enter
     document.getElementById('receiveBarcode').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') findOrdersByProduct();
     });
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// ===== ПОИСК КЛИЕНТА ПО QR (ТОЛЬКО ЦИФРЫ) =====
+// ===== ПОИСК КЛИЕНТА ПО QR =====
 function findClientByQR() {
     const qr = document.getElementById('clientQRInput').value.trim();
     if (!qr) {
@@ -31,28 +31,24 @@ function findClientByQR() {
         return;
     }
     
-    // Очищаем от лишних символов, оставляем только цифры и _
+    // Очищаем от лишних символов
     const cleanQR = qr.replace(/[^0-9_]/g, '');
     const parts = cleanQR.split('_');
     
     if (parts.length < 2) {
-        showToast('❌ Неверный формат QR-кода. Ожидается: цифры_цифры_цифры', true);
+        showToast('❌ Неверный формат QR-кода', true);
         return;
     }
-    
-    // parts[0] - orderId (цифры)
-    // parts[1] - clientId (цифры)
-    // parts[2] - timestamp (цифры)
     
     const orderId = parts[0];
     const clientId = parts[1];
     
-    if (!clientId || clientId.length < 2) {
-        showToast('❌ Неверный формат QR-кода. ID клиента не найден', true);
+    if (!clientId) {
+        showToast('❌ ID клиента не найден в QR-коде', true);
         return;
     }
     
-    // Ищем клиента по ID (поиск по части ID)
+    // Ищем клиента по ID
     db.ref('clients').once('value', snap => {
         const clients = snap.val();
         if (!clients) {
@@ -63,10 +59,9 @@ function findClientByQR() {
         let foundClient = null;
         let foundKey = null;
         
-        // Ищем клиента по ID (сравниваем с очищенным ID)
+        // Ищем клиента по ID
         for (let key in clients) {
-            const cleanKey = key.replace(/\D/g, '');
-            if (cleanKey === clientId || key === clientId || cleanKey.includes(clientId)) {
+            if (key === clientId || key.includes(clientId) || clientId.includes(key)) {
                 foundClient = clients[key];
                 foundKey = key;
                 break;
@@ -74,7 +69,7 @@ function findClientByQR() {
         }
         
         if (!foundClient) {
-            showToast('❌ Клиент не найден. Проверьте QR-код', true);
+            showToast('❌ Клиент с ID ' + clientId + ' не найден', true);
             return;
         }
         
@@ -85,9 +80,10 @@ function findClientByQR() {
             <div class="member-info">
                 <div>
                     <strong>${foundClient.fullName || 'Клиент'}</strong>
-                    <br><span class="badge">📱 ${foundClient.phone}</span>
+                    <br><span class="badge">📱 ${foundClient.phone || 'Не указан'}</span>
                     <span class="badge">⭐ ${foundClient.balance || 0} баллов</span>
-                    <span style="font-size:0.7rem; color:#3e5f7e; display:block;">Заказ: ${orderId || 'Не найден'}</span>
+                    <span style="font-size:0.7rem; color:#3e5f7e; display:block;">ID: ${foundKey}</span>
+                    ${orderId ? `<span style="font-size:0.7rem; color:#3e5f7e; display:block;">Заказ: ${orderId}</span>` : ''}
                 </div>
             </div>
             <button class="small-btn danger" onclick="clearClient()">✕</button>
@@ -112,8 +108,9 @@ function findOrdersByProduct() {
     }
     
     const container = document.getElementById('foundOrders');
-    container.innerHTML = '<div class="loading-spinner">Поиск товара и заказов...</div>';
+    container.innerHTML = '<div class="loading-spinner">Поиск...</div>';
     
+    // Сначала ищем товар по штрихкоду
     db.ref('products').orderByChild('barcode').equalTo(barcode).once('value', snap => {
         let product = null;
         let productId = null;
@@ -123,7 +120,11 @@ function findOrdersByProduct() {
         });
         
         if (!product) {
-            container.innerHTML = `<div class="empty-state">❌ Товар с штрихкодом ${barcode} не найден в базе</div>`;
+            container.innerHTML = `
+                <div class="empty-state" style="color:#b33a34; border:1px solid #b33a34;">
+                    ❌ Товар с штрихкодом ${barcode} не найден в базе
+                </div>
+            `;
             showToast('❌ Товар не найден', true);
             return;
         }
@@ -131,6 +132,7 @@ function findOrdersByProduct() {
         foundProduct = { id: productId, ...product };
         showToast(`✅ Товар найден: ${product.name}`);
         
+        // Теперь ищем заказы с этим товаром
         db.ref('orders').once('value', snap2 => {
             const orders = snap2.val();
             if (!orders) {
@@ -150,6 +152,7 @@ function findOrdersByProduct() {
             
             for (let key in orders) {
                 const order = orders[key];
+                // Проверяем, содержит ли заказ этот товар
                 if (order.items && order.items.includes(product.name)) {
                     found = true;
                     orderCount++;
@@ -160,9 +163,6 @@ function findOrdersByProduct() {
                         'Доставлен': '#7a8a9e'
                     };
                     
-                    // Очищенный ID заказа (только цифры)
-                    const cleanOrderId = key.replace(/\D/g, '').slice(0, 8);
-                    
                     html += `
                         <div class="member-item" style="margin-top:8px; ${order.status === 'Готов к выдаче' ? 'border:2px solid #1d6f2c;' : ''}">
                             <div>
@@ -172,12 +172,11 @@ function findOrdersByProduct() {
                                 <span style="font-size:0.7rem; color:#7a8a9e;">📅 ${order.date}</span>
                                 <span style="font-size:0.7rem; color:#3e5f7e;">💳 ${order.paymentMethod || 'Не указан'}</span>
                                 <span class="badge" style="background:${statusColors[order.status] || '#7a8a9e'}; color:white;">${order.status}</span>
-                                <span style="font-size:0.6rem; color:#7a8a9e; display:block;">Заказ #${cleanOrderId}</span>
                             </div>
                             ${order.status === 'Ожидает' ? 
                                 `<button onclick="markOrderReady('${key}')" class="btn-success">✅ Готов к выдаче</button>` :
                                 order.status === 'Готов к выдаче' ?
-                                `<button onclick="markOrderReady('${key}')" class="btn-warning" disabled style="opacity:0.6;">✅ Уже готов</button>` :
+                                `<span class="badge" style="background:#1d6f2c; color:white;">✅ Готов</span>` :
                                 `<span class="badge" style="background:#7a8a9e; color:white;">${order.status}</span>`
                             }
                         </div>
@@ -192,7 +191,6 @@ function findOrdersByProduct() {
             }
             
             container.innerHTML = html;
-            currentOrders = [];
         });
     });
 }
@@ -229,6 +227,7 @@ function processReturn() {
         return;
     }
     
+    // Ищем товар по штрихкоду
     db.ref('products').orderByChild('barcode').equalTo(barcode).once('value', snap => {
         let product = null;
         snap.forEach(child => {
@@ -236,14 +235,23 @@ function processReturn() {
         });
         
         if (!product) {
-            resultDiv.innerHTML = `<div style="color:#b33a34; padding:12px; background:#fee9e9; border-radius:16px;">❌ Товар с штрихкодом ${barcode} не найден</div>`;
+            resultDiv.innerHTML = `
+                <div style="color:#b33a34; padding:12px; background:#fee9e9; border-radius:16px;">
+                    ❌ Товар с штрихкодом ${barcode} не найден
+                </div>
+            `;
             return;
         }
         
+        // Ищем заказы клиента с этим товаром
         db.ref('orders').orderByChild('clientId').equalTo(currentClient.id).once('value', snap2 => {
             const orders = snap2.val();
             if (!orders) {
-                resultDiv.innerHTML = `<div style="color:#b33a34; padding:12px; background:#fee9e9; border-radius:16px;">❌ У клиента нет заказов</div>`;
+                resultDiv.innerHTML = `
+                    <div style="color:#b33a34; padding:12px; background:#fee9e9; border-radius:16px;">
+                        ❌ У клиента нет заказов
+                    </div>
+                `;
                 return;
             }
             
@@ -259,17 +267,21 @@ function processReturn() {
             }
             
             if (!foundOrder) {
-                resultDiv.innerHTML = `<div style="color:#b33a34; padding:12px; background:#fee9e9; border-radius:16px;">❌ Нет готовых заказов с товаром "${product.name}"</div>`;
+                resultDiv.innerHTML = `
+                    <div style="color:#b33a34; padding:12px; background:#fee9e9; border-radius:16px;">
+                        ❌ Нет готовых заказов с товаром "${product.name}"
+                    </div>
+                `;
                 return;
             }
             
+            // Отмечаем товар как выданный
             db.ref('orders/' + foundKey).update({
                 status: 'Выдан',
                 issuedAt: new Date().toLocaleString('ru-RU'),
                 issuedBy: user.fullName,
                 issuedQuantity: quantity
             }).then(() => {
-                const cleanOrderId = foundKey.replace(/\D/g, '').slice(0, 8);
                 resultDiv.innerHTML = `
                     <div style="color:#1d6f2c; padding:12px; background:#f0f9f0; border-radius:16px; border:1px solid #1d6f2c;">
                         <strong>✅ Товар выдан!</strong>
@@ -277,7 +289,6 @@ function processReturn() {
                         <br>👤 Клиент: ${currentClient.fullName || 'Клиент'}
                         <br>🔢 Количество: ${quantity} шт.
                         <br>📅 ${new Date().toLocaleString('ru-RU')}
-                        <br>📋 Заказ #${cleanOrderId}
                     </div>
                 `;
                 document.getElementById('returnBarcode').value = '';
