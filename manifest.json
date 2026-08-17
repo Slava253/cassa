@@ -1,52 +1,20 @@
 {
-    "name": "Магазин | Касса и бонусы",
-    "short_name": "Магазин",
-    "description": "Система кассы и бонусных карт",
+    "name": "Marka | Товары и доставка",
+    "short_name": "Marka",
+    "description": "Система товаров, доставки и бонусов",
     "start_url": "index.html",
     "display": "standalone",
     "orientation": "portrait",
     "theme_color": "#1a1a2e",
     "background_color": "#f0f4f9",
     "icons": [
-        {
-            "src": "img/icon-72.png",
-            "sizes": "72x72",
-            "type": "image/png"
-        },
-        {
-            "src": "img/icon-96.png",
-            "sizes": "96x96",
-            "type": "image/png"
-        },
-        {
-            "src": "img/icon-128.png",
-            "sizes": "128x128",
-            "type": "image/png"
-        },
-        {
-            "src": "img/icon-144.png",
-            "sizes": "144x144",
-            "type": "image/png"
-        },
-        {
-            "src": "img/icon-152.png",
-            "sizes": "152x152",
-            "type": "image/png"
-        },
-        {
-            "src": "img/icon-192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "img/icon-384.png",
-            "sizes": "384x384",
-            "type": "image/png"
-        },
-        {
-            "src": "img/icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        }
+        {"src": "img/icon-72.png", "sizes": "72x72", "type": "image/png"},
+        {"src": "img/icon-96.png", "sizes": "96x96", "type": "image/png"},
+        {"src": "img/icon-128.png", "sizes": "128x128", "type": "image/png"},
+        {"src": "img/icon-144.png", "sizes": "144x144", "type": "image/png"},
+        {"src": "img/icon-152.png", "sizes": "152x152", "type": "image/png"},
+        {"src": "img/icon-192.png", "sizes": "192x192", "type": "image/png"},
+        {"src": "img/icon-384.png", "sizes": "384x384", "type": "image/png"},
+        {"src": "img/icon-512.png", "sizes": "512x512", "type": "image/png"}
     ]
 }
