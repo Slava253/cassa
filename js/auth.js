@@ -6,57 +6,67 @@ function adminLogin() {
     
     if (login === '2347' && password === '2203') {
         const user = { role: 'admin', fullName: 'Администратор', login: '2347' };
-        localStorage.setItem('shop_user', JSON.stringify(user));
+        localStorage.setItem('marka_user', JSON.stringify(user));
         window.location.href = 'admin.html';
     } else {
         showToast('❌ Неверный логин или пароль', true);
     }
 }
 
-function cashierLogin() {
-    const storeId = document.getElementById('cashierStoreSelect').value;
-    const login = document.getElementById('cashierLoginInput').value.trim();
-    const password = document.getElementById('cashierPasswordInput').value.trim();
+function sellerLogin() {
+    const login = document.getElementById('sellerLoginInput').value.trim();
+    const password = document.getElementById('sellerPasswordInput').value.trim();
     
-    if (!storeId) {
-        showToast('❌ Выберите магазин', true);
-        return;
-    }
-    if (!login) {
-        showToast('❌ Введите логин кассира', true);
-        return;
-    }
-    if (!password) {
-        showToast('❌ Введите пароль', true);
+    if (!login || !password) {
+        showToast('❌ Введите логин и пароль', true);
         return;
     }
     
-    db.ref('stores/' + storeId + '/cashiers').orderByChild('login').equalTo(login).once('value', snap => {
-        const cashiers = snap.val();
+    db.ref('sellers').orderByChild('login').equalTo(login).once('value', snap => {
+        const sellers = snap.val();
         let found = null;
-        let foundKey = null;
-        for (let key in cashiers) {
-            const c = cashiers[key];
-            if (c.login === login && c.password === password) {
-                found = c;
-                foundKey = key;
+        for (let key in sellers) {
+            const s = sellers[key];
+            if (s.login === login && s.password === password) {
+                found = { id: key, ...s };
                 break;
             }
         }
         
         if (found) {
-            db.ref('stores/' + storeId).once('value', snap2 => {
-                const store = snap2.val();
-                const user = { 
-                    ...found, 
-                    id: foundKey,
-                    role: 'cashier', 
-                    storeId: storeId,
-                    storeName: store ? store.name : 'Неизвестный магазин'
-                };
-                localStorage.setItem('shop_user', JSON.stringify(user));
-                window.location.href = 'cashier.html';
-            });
+            const user = { ...found, role: 'seller' };
+            localStorage.setItem('marka_user', JSON.stringify(user));
+            window.location.href = 'seller.html';
+        } else {
+            showToast('❌ Неверный логин или пароль', true);
+        }
+    });
+}
+
+function employeeLogin() {
+    const login = document.getElementById('employeeLoginInput').value.trim();
+    const password = document.getElementById('employeePasswordInput').value.trim();
+    
+    if (!login || !password) {
+        showToast('❌ Введите логин и пароль', true);
+        return;
+    }
+    
+    db.ref('employees').orderByChild('login').equalTo(login).once('value', snap => {
+        const employees = snap.val();
+        let found = null;
+        for (let key in employees) {
+            const e = employees[key];
+            if (e.login === login && e.password === password) {
+                found = { id: key, ...e };
+                break;
+            }
+        }
+        
+        if (found) {
+            const user = { ...found, role: 'employee' };
+            localStorage.setItem('marka_user', JSON.stringify(user));
+            window.location.href = 'employee.html';
         } else {
             showToast('❌ Неверный логин или пароль', true);
         }
@@ -64,13 +74,8 @@ function cashierLogin() {
 }
 
 function clientLogin() {
-    const storeId = document.getElementById('clientStoreSelect').value;
-    let phone = document.getElementById('clientPhoneInput').value.trim();
+    const phone = document.getElementById('clientPhoneInput').value.trim();
     
-    if (!storeId) {
-        showToast('❌ Выберите магазин', true);
-        return;
-    }
     if (!phone || phone === '+7') {
         showToast('❌ Введите номер телефона', true);
         return;
@@ -99,20 +104,26 @@ function clientLogin() {
         }
         
         if (found) {
-            db.ref('stores/' + storeId).once('value', snap2 => {
-                const store = snap2.val();
-                const user = { 
-                    ...found, 
-                    id: foundKey,
-                    role: 'client', 
-                    storeId: storeId,
-                    storeName: store ? store.name : 'Неизвестный магазин'
-                };
-                localStorage.setItem('shop_user', JSON.stringify(user));
-                window.location.href = 'client.html';
-            });
+            const user = { ...found, id: foundKey, role: 'client' };
+            localStorage.setItem('marka_user', JSON.stringify(user));
+            window.location.href = 'client.html';
         } else {
-            showToast('❌ Клиент с таким номером не найден', true);
+            // Автоматическое создание клиента
+            const cardNumber = '29' + Math.floor(Math.random() * 10000000000).toString().padStart(10, '0');
+            const newClient = {
+                fullName: 'Клиент',
+                phone: fullPhone,
+                cardNumber: cardNumber,
+                balance: 0,
+                history: [],
+                createdAt: new Date().toISOString()
+            };
+            
+            db.ref('clients').push(newClient).then(ref => {
+                const user = { ...newClient, id: ref.key, role: 'client' };
+                localStorage.setItem('marka_user', JSON.stringify(user));
+                window.location.href = 'client.html';
+            }).catch(err => showToast('❌ Ошибка создания клиента', true));
         }
     });
 }
@@ -139,7 +150,7 @@ function courierLogin() {
         
         if (found) {
             const user = { ...found, role: 'courier' };
-            localStorage.setItem('shop_user', JSON.stringify(user));
+            localStorage.setItem('marka_user', JSON.stringify(user));
             window.location.href = 'courier.html';
         } else {
             showToast('❌ Неверный логин или пароль', true);
@@ -169,7 +180,7 @@ function supportLogin() {
         
         if (found) {
             const user = { ...found, role: 'support' };
-            localStorage.setItem('shop_user', JSON.stringify(user));
+            localStorage.setItem('marka_user', JSON.stringify(user));
             window.location.href = 'support.html';
         } else {
             showToast('❌ Неверный логин или пароль', true);
@@ -178,12 +189,12 @@ function supportLogin() {
 }
 
 function logout() {
-    localStorage.removeItem('shop_user');
+    localStorage.removeItem('marka_user');
     window.location.href = 'index.html';
 }
 
 function checkAuth() {
-    const saved = localStorage.getItem('shop_user');
+    const saved = localStorage.getItem('marka_user');
     if (!saved) {
         window.location.href = 'index.html';
         return null;
@@ -191,14 +202,14 @@ function checkAuth() {
     try {
         return JSON.parse(saved);
     } catch(e) {
-        localStorage.removeItem('shop_user');
+        localStorage.removeItem('marka_user');
         window.location.href = 'index.html';
         return null;
     }
 }
 
 function getCurrentUser() {
-    const saved = localStorage.getItem('shop_user');
+    const saved = localStorage.getItem('marka_user');
     return saved ? JSON.parse(saved) : null;
 }
 
