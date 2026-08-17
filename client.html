@@ -5,19 +5,236 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
     <meta name="theme-color" content="#1a1a2e">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="img/icon-192.png">
     <title>Marka | Моя карта</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/mobile.css">
+    <style>
+        /* Дополнительные стили только для клиента */
+        .tab-btn {
+            background: #2c3e2f;
+            border: 2px solid #d4af37;
+            color: #ffefb9;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: #d6a13e;
+            color: #1f2a0e;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .color-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid #dae2ec;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 0;
+        }
+        .color-btn:hover {
+            transform: scale(1.1);
+            border-color: #1a1a2e;
+        }
+        #barcodeCanvas {
+            max-width: 100%;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #eef2f8;
+        }
+        #barcodeNumber {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            color: #1a1a2e;
+            background: #f8faff;
+            padding: 4px 12px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        .qr-container {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 20px;
+            border: 2px dashed #dae2ec;
+        }
+        .document-card {
+            background: white;
+            border-radius: 18px;
+            padding: 14px 18px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            border: 1px solid #eef2f8;
+        }
+        .member-item {
+            background: #f8faff;
+            border-radius: 18px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            border: 1px solid #eef2f8;
+        }
+        .member-info {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .small-btn {
+            padding: 4px 12px;
+            font-size: 0.65rem;
+            background: #e6edf6;
+            color: #1a1a2e;
+            border-radius: 30px;
+            cursor: pointer;
+            border: none;
+            font-weight: 500;
+        }
+        .small-btn.danger {
+            background: #fee9e9;
+            color: #b33a34;
+        }
+        .small-btn:hover {
+            opacity: 0.8;
+        }
+        .btn-success {
+            background: #1d6f2c;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #155a22;
+        }
+        .history-item {
+            background: #f8faff;
+            border-radius: 14px;
+            padding: 10px 14px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #eef2f8;
+            font-size: 0.85rem;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 24px;
+            color: #7a8a9e;
+            background: #f8faff;
+            border-radius: 16px;
+            font-size: 0.85rem;
+        }
+        .loading-spinner {
+            text-align: center;
+            padding: 24px;
+            color: #7a8a9e;
+        }
+        .badge {
+            background: #eef4ff;
+            color: #1a1a2e;
+            border-radius: 30px;
+            padding: 3px 12px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        label {
+            font-weight: 600;
+            color: #1e2f41;
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.8rem;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #dae2ec;
+            border-radius: 14px;
+            font-size: 0.9rem;
+            transition: 0.2s;
+            background: #fbfdff;
+            color: #111;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #1a1a2e;
+            box-shadow: 0 0 0 3px rgba(26,26,46,0.08);
+        }
+        button {
+            background: #1a1a2e;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.8rem;
+        }
+        button:hover:not(:disabled) {
+            background: #0e0e1e;
+            transform: scale(0.97);
+        }
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 600px) {
+            .grid-2col { grid-template-columns: 1fr; }
+            .role-oval { width: 60px; height: 60px; }
+            .role-icon { font-size: 1.2rem; }
+            .role-name { font-size: 0.5rem; }
+        }
+        .success-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1d6f2c;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            z-index: 9999;
+            animation: slideFade 3s ease forwards;
+            max-width: 90%;
+            font-size: 0.9rem;
+        }
+        @keyframes slideFade {
+            0% { opacity: 0; transform: translateY(20px); }
+            15% { opacity: 1; transform: translateY(0); }
+            85% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(20px); visibility: hidden; }
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
         <div class="header">
             <div class="logo-area">
                 <h1>👤 Marka</h1>
-                <p>Личный кабинет</p>
+                <p id="clientStoreDisplay">Личный кабинет</p>
             </div>
             <div class="user-status">
                 <span id="clientName">👤 Клиент</span>
@@ -26,39 +243,91 @@
         </div>
 
         <div class="main-content">
+            <!-- Информация о клиенте -->
             <div class="card">
                 <div class="card-title">👤 Личный кабинет</div>
-                <div id="clientInfo" class="member-info" style="margin-bottom:16px;"></div>
+                <div id="clientInfo" class="member-info" style="margin-bottom:12px;"></div>
             </div>
 
-            <!-- Корзина -->
-            <div class="card">
-                <div class="card-title">🛒 Корзина</div>
-                <div id="cartList"><div class="empty-state">Корзина пуста</div></div>
-                <div style="margin-top:12px;">
-                    <button onclick="placeOrder()" class="btn-success" style="width:100%; padding:12px;">📦 Заказать</button>
+            <!-- Вкладки -->
+            <div class="tabs" style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+                <button class="tab-btn active" data-tab="client-shop" onclick="switchClientTab('shop')">📦 Товары</button>
+                <button class="tab-btn" data-tab="client-cart" onclick="switchClientTab('cart')">🛒 Корзина</button>
+                <button class="tab-btn" data-tab="client-orders" onclick="switchClientTab('orders')">📜 Заказы</button>
+                <button class="tab-btn" data-tab="client-card" onclick="switchClientTab('card')">📱 QR-код</button>
+                <button class="tab-btn" data-tab="client-profile" onclick="switchClientTab('profile')">👤 Профиль</button>
+            </div>
+
+            <!-- Товары -->
+            <div id="client-shop" class="tab-content active">
+                <div class="card">
+                    <div class="card-title">📦 Товары</div>
+                    <div id="productsList"><div class="loading-spinner">Загрузка...</div></div>
                 </div>
             </div>
 
-            <!-- Список товаров -->
-            <div class="card">
-                <div class="card-title">📦 Товары</div>
-                <div id="productsList"><div class="loading-spinner">Загрузка...</div></div>
+            <!-- Корзина -->
+            <div id="client-cart" class="tab-content" style="display:none;">
+                <div class="card">
+                    <div class="card-title">🛒 Корзина</div>
+                    <div id="cartList"><div class="empty-state">Корзина пуста</div></div>
+                    <div style="margin-top:12px;">
+                        <button onclick="placeOrder()" class="btn-success" style="width:100%; padding:12px;">📦 Оформить заказ</button>
+                    </div>
+                </div>
             </div>
 
-            <!-- История заказов -->
-            <div class="card">
-                <div class="card-title">📜 История заказов</div>
-                <div id="ordersList"><div class="loading-spinner">Загрузка...</div></div>
+            <!-- Заказы -->
+            <div id="client-orders" class="tab-content" style="display:none;">
+                <div class="card">
+                    <div class="card-title">📜 История заказов</div>
+                    <div id="ordersList"><div class="loading-spinner">Загрузка...</div></div>
+                </div>
             </div>
 
             <!-- QR-код -->
-            <div class="card">
-                <div class="card-title">📱 Ваш QR-код</div>
-                <div style="text-align:center; padding:20px; background:white; border-radius:20px; border:2px dashed #dae2ec;">
-                    <canvas id="qrCanvas" style="max-width:200px; margin:0 auto;"></canvas>
-                    <p id="qrDataDisplay" style="font-size:0.8rem; color:#7a8a9e; margin-top:8px;"></p>
-                    <p style="font-size:0.7rem; color:#3e5f7e; margin-top:4px;">Покажите этот QR-код сотруднику</p>
+            <div id="client-card" class="tab-content" style="display:none;">
+                <div class="card">
+                    <div class="card-title">📱 Ваш QR-код</div>
+                    <div style="margin-bottom:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                        <label style="font-weight:600; font-size:0.8rem;">Цвет:</label>
+                        <button onclick="changeBarcodeColor('#000000')" class="color-btn" style="background:#000000; border:2px solid #ccc;"></button>
+                        <button onclick="changeBarcodeColor('#1a1a2e')" class="color-btn" style="background:#1a1a2e;"></button>
+                        <button onclick="changeBarcodeColor('#2d6a4f')" class="color-btn" style="background:#2d6a4f;"></button>
+                        <button onclick="changeBarcodeColor('#ffffff')" class="color-btn" style="background:#ffffff; border:2px solid #333; color:#333;">⬜</button>
+                    </div>
+                    <div class="qr-container">
+                        <canvas id="qrCanvas" style="max-width:200px; margin:0 auto;"></canvas>
+                        <p id="qrDataDisplay" style="font-size:0.8rem; color:#7a8a9e; margin-top:8px;"></p>
+                        <p style="font-size:0.7rem; color:#3e5f7e; margin-top:4px;">Покажите QR-код сотруднику</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Профиль -->
+            <div id="client-profile" class="tab-content" style="display:none;">
+                <div class="card">
+                    <div class="card-title">👤 Профиль</div>
+                    <div class="form-group">
+                        <label>📱 Номер телефона</label>
+                        <input type="tel" id="profilePhone" readonly style="background:#f0f4f9; color:#1a1a2e; font-weight:500;">
+                    </div>
+                    <div class="form-group">
+                        <label>✏️ Никнейм</label>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <input type="text" id="profileNickname" placeholder="Введите никнейм" style="flex:2; min-width:150px;">
+                            <button onclick="saveNickname()" class="btn-success">💾 Сохранить</button>
+                        </div>
+                        <div id="nicknameStatus" style="margin-top:6px; font-size:0.8rem; color:#7a8a9e;"></div>
+                    </div>
+                    <div class="form-group" style="margin-top:12px; padding-top:12px; border-top:2px solid #eef2f8;">
+                        <label>💳 Номер карты</label>
+                        <input type="text" id="profileCardNumber" readonly style="background:#f0f4f9; color:#1a1a2e; font-weight:500; font-family:monospace;">
+                    </div>
+                    <div class="form-group">
+                        <label>⭐ Бонусный баланс</label>
+                        <input type="text" id="profileBalance" readonly style="background:#f0f4f9; color:#1a1a2e; font-weight:500; font-size:1.2rem;">
+                    </div>
                 </div>
             </div>
         </div>
@@ -66,14 +335,10 @@
 
     <div id="toast" class="success-toast" style="display:none;"></div>
 
-    <!-- Подключаем Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    
-    <!-- Подключаем библиотеки -->
-    <script src="js/barcode.js"></script>
-    <script src="js/qrcode.min.js"></script>
     <script src="js/firebase-config.js"></script>
+    <script src="js/qrcode.min.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/client.js"></script>
 </body>
