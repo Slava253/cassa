@@ -6,23 +6,63 @@ if (!user || user.role !== 'client') {
 }
 
 let cart = [];
-let currentOrderQR = '';
+let currentBarcodeColor = '#000000';
 
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('clientName').innerHTML = `👤 ${user.fullName || 'Клиент'}`;
+    // Заполняем информацию
+    document.getElementById('clientName').innerHTML = `👤 ${user.nickname || user.fullName || 'Клиент'}`;
+    document.getElementById('clientStoreDisplay').innerHTML = 'Личный кабинет';
+    document.getElementById('profilePhone').value = user.phone || '';
+    document.getElementById('profileNickname').value = user.nickname || '';
+    document.getElementById('profileCardNumber').value = user.cardNumber || '';
+    document.getElementById('profileBalance').value = (user.balance || 0) + ' баллов';
+    
+    // Обновляем информацию
+    updateClientInfo();
+    
+    // Генерируем QR
+    generateQR(user.cardNumber || user.id);
+    
+    // Загружаем данные
+    loadProducts();
+    loadOrders();
+    updateCart();
+    
+    if (user.nickname) {
+        document.getElementById('nicknameStatus').innerHTML = `✅ Никнейм установлен: ${user.nickname}`;
+        document.getElementById('nicknameStatus').style.color = '#1d6f2c';
+    }
+    
+    // Обработчики для Enter
+    document.getElementById('profileNickname').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') saveNickname();
+    });
+});
+
+// ===== ОБНОВЛЕНИЕ ИНФОРМАЦИИ =====
+function updateClientInfo() {
+    const displayName = user.nickname || user.fullName || 'Клиент';
     document.getElementById('clientInfo').innerHTML = `
         <div>
-            <h3>${user.fullName || 'Клиент'}</h3>
+            <h3>${displayName}</h3>
+            ${user.nickname ? `<span style="font-size:0.8rem; color:#7a8a9e;">(${user.fullName || 'Клиент'})</span><br>` : ''}
             <span class="badge">🎫 Карта: ${user.cardNumber}</span><br>
-            <span style="font-size:0.8rem;">📱 ${user.phone}</span><br>
+            <span style="font-size:0.8rem;">📱 ${user.phone || 'Не указан'}</span><br>
             <span class="badge">⭐ ${user.balance || 0} баллов</span>
         </div>
     `;
+    document.getElementById('clientName').innerHTML = `👤 ${displayName}`;
+}
+
+// ===== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК =====
+function switchClientTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     
-    loadProducts();
-    loadOrders();
-    generateQR(user.id);
-});
+    const target = document.getElementById('client-' + tab);
+    if (target) target.style.display = 'block';
+    document.querySelector(`.tab-btn[data-tab="client-${tab}"]`)?.classList.add('active');
+}
 
 // ===== ТОВАРЫ =====
 function loadProducts() {
@@ -72,6 +112,7 @@ function addToCart(id, name, price, size) {
     showToast(`✅ "${name}" добавлен в корзину`);
 }
 
+// ===== КОРЗИНА =====
 function updateCart() {
     const container = document.getElementById('cartList');
     if (cart.length === 0) {
@@ -115,7 +156,7 @@ function placeOrder() {
     
     const orderData = {
         clientId: user.id,
-        clientName: user.fullName || 'Клиент',
+        clientName: user.nickname || user.fullName || 'Клиент',
         clientPhone: user.phone,
         items: cart.map(i => i.name).join(', '),
         total: cart.reduce((sum, i) => sum + i.price, 0),
@@ -128,9 +169,11 @@ function placeOrder() {
     
     db.ref('orders').push(orderData).then(ref => {
         const orderId = ref.key;
-        // Генерируем QR с правильным форматом: orderId_clientId_timestamp
-        const qrData = `${orderId}_${user.id}_${Date.now()}`;
-        currentOrderQR = qrData;
+        // Генерируем QR только из цифр
+        const cleanOrderId = orderId.replace(/\D/g, '');
+        const cleanClientId = user.id.replace(/\D/g, '');
+        const timestamp = Date.now().toString();
+        const qrData = cleanOrderId + '_' + cleanClientId + '_' + timestamp;
         generateQR(qrData);
         
         cart = [];
@@ -160,14 +203,14 @@ function loadOrders() {
                 'Выдан': '#7a8a9e',
                 'Доставлен': '#7a8a9e'
             };
+            const cleanOrderId = key.replace(/\D/g, '').slice(0, 8);
             html += `
                 <div class="history-item">
                     <div>
-                        <strong>📦 Заказ #${key.slice(0,8)}</strong>
+                        <strong>📦 Заказ #${cleanOrderId || key.slice(0,8)}</strong>
                         <span style="font-size:0.7rem; color:#7a8a9e; display:block;">${o.date}</span>
                         <span style="font-size:0.7rem; color:#3e5f7e;">${o.items}</span>
                         <span style="font-size:0.7rem; color:#3e5f7e;">🚚 ${o.deliveryMethod} | 💳 ${o.paymentMethod}</span>
-                        <span style="font-size:0.7rem; color:#3e5f7e;">Статус: ${o.status}</span>
                     </div>
                     <div style="text-align:right;">
                         <div><strong>${o.total} ₽</strong></div>
@@ -181,27 +224,26 @@ function loadOrders() {
     });
 }
 
-// ===== QR-КОД (НАСТОЯЩИЙ) =====
+// ===== QR-КОД =====
 function generateQR(data) {
     const canvas = document.getElementById('qrCanvas');
     if (!canvas) return;
     
-    const qrData = data || `${user.id}_${Date.now()}`;
+    const cleanData = data.replace(/[^0-9_]/g, '');
+    const qrData = cleanData || user.cardNumber || user.id;
+    
     try {
-        // Используем библиотеку QRCode
         if (typeof QRCode !== 'undefined') {
             const qr = new QRCode({
                 element: canvas,
                 value: qrData,
                 size: 200,
                 bgColor: '#ffffff',
-                fgColor: '#1a1a2e'
+                fgColor: currentBarcodeColor || '#1a1a2e'
             });
             document.getElementById('qrDataDisplay').textContent = `QR: ${qrData}`;
-            document.getElementById('qrDataDisplay').style.color = '#1a1a2e';
         } else {
-            // Fallback: просто показываем текст
-            document.getElementById('qrDataDisplay').textContent = `QR-код: ${qrData}`;
+            document.getElementById('qrDataDisplay').textContent = `QR: ${qrData}`;
             canvas.style.display = 'none';
         }
     } catch(e) {
@@ -210,6 +252,33 @@ function generateQR(data) {
     }
 }
 
+function changeBarcodeColor(color) {
+    currentBarcodeColor = color;
+    const qrData = document.getElementById('qrDataDisplay').textContent.replace('QR: ', '');
+    generateQR(qrData || user.cardNumber || user.id);
+    showToast('🎨 Цвет QR-кода изменён');
+}
+
+// ===== СОХРАНЕНИЕ НИКНЕЙМА =====
+function saveNickname() {
+    const nickname = document.getElementById('profileNickname').value.trim();
+    if (!nickname) {
+        showToast('❌ Введите никнейм', true);
+        return;
+    }
+    
+    const clientId = user.id;
+    db.ref('clients/' + clientId).update({ nickname: nickname }).then(() => {
+        user.nickname = nickname;
+        localStorage.setItem('marka_user', JSON.stringify(user));
+        updateClientInfo();
+        document.getElementById('nicknameStatus').innerHTML = `✅ Никнейм сохранён: ${nickname}`;
+        document.getElementById('nicknameStatus').style.color = '#1d6f2c';
+        showToast(`✅ Никнейм "${nickname}" сохранён!`);
+    }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+}
+
+// ===== TOAST =====
 function showToast(msg, isError = false) {
     const toast = document.getElementById('toast');
     if (!toast) return;
