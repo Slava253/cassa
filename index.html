@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="img/icon-192.png">
-    <title>У дома | Вход</title>
+    <title>Marka | Вход</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/mobile.css">
@@ -16,8 +16,8 @@
     <div class="app-container">
         <div class="header">
             <div class="logo-area">
-                <h1>🏪 У дома</h1>
-                <p>Касса • Бонусы • Карты</p>
+                <h1>🅜 Marka</h1>
+                <p>Товары • Доставка • Бонусы</p>
             </div>
         </div>
 
@@ -30,9 +30,13 @@
                         <div class="role-icon">👑</div>
                         <div class="role-name">Админ</div>
                     </div>
-                    <div class="role-oval" data-role="cashier" onclick="selectRole('cashier')">
+                    <div class="role-oval" data-role="seller" onclick="selectRole('seller')">
+                        <div class="role-icon">📦</div>
+                        <div class="role-name">Продавец</div>
+                    </div>
+                    <div class="role-oval" data-role="employee" onclick="selectRole('employee')">
                         <div class="role-icon">💳</div>
-                        <div class="role-name">Касса</div>
+                        <div class="role-name">Сотрудник</div>
                     </div>
                     <div class="role-oval" data-role="client" onclick="selectRole('client')">
                         <div class="role-icon">👤</div>
@@ -60,31 +64,31 @@
                     <button onclick="adminLogin()" class="btn-login">👑 Войти</button>
                 </div>
 
-                <div id="cashierLogin" class="login-form" style="display:none;">
+                <div id="sellerLogin" class="login-form" style="display:none;">
                     <div class="form-group">
-                        <label>🏪 Магазин</label>
-                        <select id="cashierStoreSelect">
-                            <option value="">Выберите магазин</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>👤 Логин кассира</label>
-                        <input type="text" id="cashierLoginInput" placeholder="Введите логин">
+                        <label>👤 Логин продавца</label>
+                        <input type="text" id="sellerLoginInput" placeholder="Введите логин">
                     </div>
                     <div class="form-group">
                         <label>🔒 Пароль</label>
-                        <input type="password" id="cashierPasswordInput" placeholder="Введите пароль">
+                        <input type="password" id="sellerPasswordInput" placeholder="Введите пароль">
                     </div>
-                    <button onclick="cashierLogin()" class="btn-login">💳 Войти</button>
+                    <button onclick="sellerLogin()" class="btn-login">📦 Войти</button>
+                </div>
+
+                <div id="employeeLogin" class="login-form" style="display:none;">
+                    <div class="form-group">
+                        <label>👤 Логин сотрудника</label>
+                        <input type="text" id="employeeLoginInput" placeholder="Введите логин">
+                    </div>
+                    <div class="form-group">
+                        <label>🔒 Пароль</label>
+                        <input type="password" id="employeePasswordInput" placeholder="Введите пароль">
+                    </div>
+                    <button onclick="employeeLogin()" class="btn-login">💳 Войти</button>
                 </div>
 
                 <div id="clientLogin" class="login-form" style="display:none;">
-                    <div class="form-group">
-                        <label>🏪 Магазин</label>
-                        <select id="clientStoreSelect">
-                            <option value="">Выберите магазин</option>
-                        </select>
-                    </div>
                     <div class="form-group">
                         <label>📱 Номер телефона</label>
                         <div style="display:flex; align-items:center; background:#fbfdff; border:1.5px solid #dae2ec; border-radius:18px; overflow:hidden;">
@@ -134,54 +138,24 @@
             document.querySelector(`.role-oval[data-role="${role}"]`).classList.add('active');
             
             document.getElementById('adminLogin').style.display = role === 'admin' ? 'block' : 'none';
-            document.getElementById('cashierLogin').style.display = role === 'cashier' ? 'block' : 'none';
+            document.getElementById('sellerLogin').style.display = role === 'seller' ? 'block' : 'none';
+            document.getElementById('employeeLogin').style.display = role === 'employee' ? 'block' : 'none';
             document.getElementById('clientLogin').style.display = role === 'client' ? 'block' : 'none';
             document.getElementById('courierLogin').style.display = role === 'courier' ? 'block' : 'none';
             document.getElementById('supportLogin').style.display = role === 'support' ? 'block' : 'none';
-            
-            if (role === 'cashier' || role === 'client') {
-                loadStores(role);
-            }
         }
 
-        function loadStores(role) {
-            const selectId = role === 'cashier' ? 'cashierStoreSelect' : 'clientStoreSelect';
-            const select = document.getElementById(selectId);
-            select.innerHTML = '<option value="">Загрузка...</option>';
-            
-            db.ref('stores').once('value', snap => {
-                const stores = snap.val();
-                select.innerHTML = '<option value="">Выберите магазин</option>';
-                if (stores) {
-                    for (let key in stores) {
-                        const option = document.createElement('option');
-                        option.value = key;
-                        option.textContent = stores[key].name;
-                        select.appendChild(option);
-                    }
-                }
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const phoneInput = document.getElementById('clientPhoneInput');
-            if (phoneInput) {
-                phoneInput.addEventListener('input', function() {
-                    this.value = this.value.replace(/[^0-9\-\(\) ]/g, '');
-                });
-            }
-        });
-
-        const saved = localStorage.getItem('shop_user');
+        const saved = localStorage.getItem('marka_user');
         if (saved) {
             try {
                 const user = JSON.parse(saved);
                 if (user.role === 'admin') window.location.href = 'admin.html';
-                else if (user.role === 'cashier') window.location.href = 'cashier.html';
+                else if (user.role === 'seller') window.location.href = 'seller.html';
+                else if (user.role === 'employee') window.location.href = 'employee.html';
                 else if (user.role === 'client') window.location.href = 'client.html';
                 else if (user.role === 'courier') window.location.href = 'courier.html';
                 else if (user.role === 'support') window.location.href = 'support.html';
-            } catch(e) { localStorage.removeItem('shop_user'); }
+            } catch(e) { localStorage.removeItem('marka_user'); }
         }
     </script>
 </body>
