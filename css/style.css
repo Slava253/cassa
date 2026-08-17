@@ -20,7 +20,6 @@ body {
     overflow: hidden;
 }
 
-/* ===== HEADER ===== */
 .header {
     background: linear-gradient(145deg, #1a1a2e, #16213e);
     color: white;
@@ -76,7 +75,6 @@ body {
     background: rgba(255,255,255,0.25);
 }
 
-/* ===== MAIN ===== */
 .main-content {
     padding: 28px 32px;
 }
@@ -102,7 +100,6 @@ body {
     gap: 12px;
 }
 
-/* ===== ОВАЛЬНЫЕ КНОПКИ РОЛЕЙ ===== */
 .role-selector-oval {
     display: flex;
     gap: 16px;
@@ -158,7 +155,6 @@ body {
     transition: 0.3s;
 }
 
-/* ===== ФОРМЫ ===== */
 .login-card {
     max-width: 520px;
     margin: 0 auto;
@@ -217,7 +213,6 @@ input:focus, select:focus, textarea:focus {
     box-shadow: 0 6px 16px rgba(26,26,46,0.25);
 }
 
-/* ===== КНОПКИ ===== */
 .badge {
     background: #eef4ff;
     color: #1a1a2e;
@@ -262,15 +257,6 @@ input:focus, select:focus, textarea:focus {
     flex-wrap: wrap;
 }
 
-.member-photo {
-    width: 54px;
-    height: 54px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #d9e2ed;
-    border: 2.5px solid #f6b83d;
-}
-
 button {
     background: #1a1a2e;
     color: white;
@@ -300,6 +286,8 @@ button:disabled {
 .btn-danger:hover { background: #8f2d28; }
 .btn-warning { background: #d4a13e; }
 .btn-warning:hover { background: #b8892e; }
+.btn-info { background: #2c6b6b; }
+.btn-info:hover { background: #1d4f4f; }
 
 .small-btn {
     padding: 5px 14px;
@@ -321,52 +309,6 @@ button:disabled {
     opacity: 0.8;
 }
 
-/* ===== КНОПКИ ОПЛАТЫ ===== */
-.payment-btn {
-    padding: 12px 20px;
-    border: 2px solid #dae2ec;
-    border-radius: 60px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.3s;
-    background: #eef2f8;
-    color: #1a1a2e;
-}
-
-.payment-btn:hover {
-    border-color: #1a1a2e;
-}
-
-.payment-btn.active-cash {
-    background: #1d6f2c;
-    color: white;
-    border-color: #1d6f2c;
-}
-
-.payment-btn.active-card {
-    background: #1a1a2e;
-    color: white;
-    border-color: #1a1a2e;
-}
-
-/* ===== СПИСАНИЕ БАЛЛОВ ===== */
-.discount-section {
-    background: #f0f9f0;
-    border: 2px solid #1d6f2c;
-    border-radius: 20px;
-    padding: 16px 20px;
-    margin: 12px 0;
-}
-
-.discount-section .badge-points {
-    background: #1d6f2c;
-    color: white;
-    padding: 4px 12px;
-    border-radius: 40px;
-    font-weight: bold;
-}
-
-/* ===== КОРЗИНА ===== */
 .history-item {
     background: #f8faff;
     border-radius: 16px;
@@ -392,7 +334,6 @@ button:disabled {
     color: #7a8a9e;
 }
 
-/* ===== TOAST ===== */
 .success-toast {
     position: fixed;
     bottom: 30px;
@@ -414,47 +355,6 @@ button:disabled {
     100% { opacity: 0; transform: translateY(24px); visibility: hidden; }
 }
 
-/* ===== MODAL ===== */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(6px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    cursor: pointer;
-}
-
-.modal-content {
-    max-width: 92%;
-    max-height: 92%;
-}
-
-.modal-content img {
-    max-width: 100%;
-    max-height: 90vh;
-    border-radius: 20px;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
-}
-
-.modal-card {
-    background: white;
-    border-radius: 32px;
-    padding: 28px;
-    max-width: 520px;
-    width: 92%;
-}
-
-.hidden-file {
-    display: none;
-}
-
-/* ===== EAN-13 ШТРИХКОД ===== */
 #barcodeCanvas {
     background: #ffffff;
     border-radius: 8px;
@@ -473,7 +373,6 @@ button:disabled {
     display: inline-block;
 }
 
-/* ===== RESPONSIVE ===== */
 @media (max-width: 760px) {
     .grid-2col { grid-template-columns: 1fr; }
     .main-content { padding: 18px; }
