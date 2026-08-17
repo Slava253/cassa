@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// ===== ПОИСК КЛИЕНТА ПО QR =====
+// ===== ПОИСК КЛИЕНТА ПО QR (ТОЛЬКО ЦИФРЫ) =====
 function findClientByQR() {
     const qr = document.getElementById('clientQRInput').value.trim();
     if (!qr) {
@@ -31,39 +31,68 @@ function findClientByQR() {
         return;
     }
     
-    // QR формат: orderId_clientId_timestamp
-    const parts = qr.split('_');
+    // Очищаем от лишних символов, оставляем только цифры и _
+    const cleanQR = qr.replace(/[^0-9_]/g, '');
+    const parts = cleanQR.split('_');
+    
     if (parts.length < 2) {
-        showToast('❌ Неверный формат QR-кода', true);
+        showToast('❌ Неверный формат QR-кода. Ожидается: цифры_цифры_цифры', true);
         return;
     }
+    
+    // parts[0] - orderId (цифры)
+    // parts[1] - clientId (цифры)
+    // parts[2] - timestamp (цифры)
     
     const orderId = parts[0];
     const clientId = parts[1];
     
-    // Ищем клиента по ID
-    db.ref('clients/' + clientId).once('value', snap => {
-        const client = snap.val();
-        if (!client) {
-            showToast('❌ Клиент не найден', true);
+    if (!clientId || clientId.length < 2) {
+        showToast('❌ Неверный формат QR-кода. ID клиента не найден', true);
+        return;
+    }
+    
+    // Ищем клиента по ID (поиск по части ID)
+    db.ref('clients').once('value', snap => {
+        const clients = snap.val();
+        if (!clients) {
+            showToast('❌ Клиенты не найдены', true);
             return;
         }
         
-        currentClient = { id: clientId, ...client };
+        let foundClient = null;
+        let foundKey = null;
+        
+        // Ищем клиента по ID (сравниваем с очищенным ID)
+        for (let key in clients) {
+            const cleanKey = key.replace(/\D/g, '');
+            if (cleanKey === clientId || key === clientId || cleanKey.includes(clientId)) {
+                foundClient = clients[key];
+                foundKey = key;
+                break;
+            }
+        }
+        
+        if (!foundClient) {
+            showToast('❌ Клиент не найден. Проверьте QR-код', true);
+            return;
+        }
+        
+        currentClient = { id: foundKey, ...foundClient };
         const container = document.getElementById('foundClient');
         container.style.display = 'flex';
         container.innerHTML = `
             <div class="member-info">
                 <div>
-                    <strong>${client.fullName || 'Клиент'}</strong><br>
-                    <span class="badge">📱 ${client.phone}</span>
-                    <span class="badge">⭐ ${client.balance || 0} баллов</span>
-                    <span style="font-size:0.7rem; color:#3e5f7e; display:block;">Заказ: ${orderId}</span>
+                    <strong>${foundClient.fullName || 'Клиент'}</strong>
+                    <br><span class="badge">📱 ${foundClient.phone}</span>
+                    <span class="badge">⭐ ${foundClient.balance || 0} баллов</span>
+                    <span style="font-size:0.7rem; color:#3e5f7e; display:block;">Заказ: ${orderId || 'Не найден'}</span>
                 </div>
             </div>
             <button class="small-btn danger" onclick="clearClient()">✕</button>
         `;
-        showToast(`✅ Клиент найден: ${client.fullName || 'Клиент'}`);
+        showToast(`✅ Клиент найден: ${foundClient.fullName || 'Клиент'}`);
     });
 }
 
@@ -74,7 +103,7 @@ function clearClient() {
     document.getElementById('clientQRInput').value = '';
 }
 
-// ===== ПРИЕМ ТОВАРА (ИСПРАВЛЕННЫЙ) =====
+// ===== ПРИЕМ ТОВАРА =====
 function findOrdersByProduct() {
     const barcode = document.getElementById('receiveBarcode').value.trim();
     if (!barcode) {
@@ -85,7 +114,6 @@ function findOrdersByProduct() {
     const container = document.getElementById('foundOrders');
     container.innerHTML = '<div class="loading-spinner">Поиск товара и заказов...</div>';
     
-    // СНАЧАЛА ИЩЕМ ТОВАР ПО ШТРИХКОДУ
     db.ref('products').orderByChild('barcode').equalTo(barcode).once('value', snap => {
         let product = null;
         let productId = null;
@@ -103,7 +131,6 @@ function findOrdersByProduct() {
         foundProduct = { id: productId, ...product };
         showToast(`✅ Товар найден: ${product.name}`);
         
-        // ТЕПЕРЬ ИЩЕМ ЗАКАЗЫ С ЭТИМ ТОВАРОМ
         db.ref('orders').once('value', snap2 => {
             const orders = snap2.val();
             if (!orders) {
@@ -123,7 +150,6 @@ function findOrdersByProduct() {
             
             for (let key in orders) {
                 const order = orders[key];
-                // Проверяем, содержит ли заказ этот товар
                 if (order.items && order.items.includes(product.name)) {
                     found = true;
                     orderCount++;
@@ -134,6 +160,9 @@ function findOrdersByProduct() {
                         'Доставлен': '#7a8a9e'
                     };
                     
+                    // Очищенный ID заказа (только цифры)
+                    const cleanOrderId = key.replace(/\D/g, '').slice(0, 8);
+                    
                     html += `
                         <div class="member-item" style="margin-top:8px; ${order.status === 'Готов к выдаче' ? 'border:2px solid #1d6f2c;' : ''}">
                             <div>
@@ -143,6 +172,7 @@ function findOrdersByProduct() {
                                 <span style="font-size:0.7rem; color:#7a8a9e;">📅 ${order.date}</span>
                                 <span style="font-size:0.7rem; color:#3e5f7e;">💳 ${order.paymentMethod || 'Не указан'}</span>
                                 <span class="badge" style="background:${statusColors[order.status] || '#7a8a9e'}; color:white;">${order.status}</span>
+                                <span style="font-size:0.6rem; color:#7a8a9e; display:block;">Заказ #${cleanOrderId}</span>
                             </div>
                             ${order.status === 'Ожидает' ? 
                                 `<button onclick="markOrderReady('${key}')" class="btn-success">✅ Готов к выдаче</button>` :
@@ -179,7 +209,6 @@ function markOrderReady(orderId) {
         showToast('✅ Заказ отмечен как готовый к выдаче');
         document.getElementById('receiveBarcode').value = '';
         document.getElementById('foundOrders').innerHTML = '';
-        // Обновляем список заказов
         findOrdersByProduct();
     }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
 }
@@ -200,7 +229,6 @@ function processReturn() {
         return;
     }
     
-    // Ищем товар по штрихкоду
     db.ref('products').orderByChild('barcode').equalTo(barcode).once('value', snap => {
         let product = null;
         snap.forEach(child => {
@@ -212,7 +240,6 @@ function processReturn() {
             return;
         }
         
-        // Ищем заказы клиента с этим товаром
         db.ref('orders').orderByChild('clientId').equalTo(currentClient.id).once('value', snap2 => {
             const orders = snap2.val();
             if (!orders) {
@@ -236,13 +263,13 @@ function processReturn() {
                 return;
             }
             
-            // Отмечаем товар как выданный
             db.ref('orders/' + foundKey).update({
                 status: 'Выдан',
                 issuedAt: new Date().toLocaleString('ru-RU'),
                 issuedBy: user.fullName,
                 issuedQuantity: quantity
             }).then(() => {
+                const cleanOrderId = foundKey.replace(/\D/g, '').slice(0, 8);
                 resultDiv.innerHTML = `
                     <div style="color:#1d6f2c; padding:12px; background:#f0f9f0; border-radius:16px; border:1px solid #1d6f2c;">
                         <strong>✅ Товар выдан!</strong>
@@ -250,6 +277,7 @@ function processReturn() {
                         <br>👤 Клиент: ${currentClient.fullName || 'Клиент'}
                         <br>🔢 Количество: ${quantity} шт.
                         <br>📅 ${new Date().toLocaleString('ru-RU')}
+                        <br>📋 Заказ #${cleanOrderId}
                     </div>
                 `;
                 document.getElementById('returnBarcode').value = '';
