@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     loadProducts();
     loadOrders();
-    generateQR();
+    generateQR(user.id);
 });
 
 // ===== ТОВАРЫ =====
@@ -107,11 +107,9 @@ function placeOrder() {
         return;
     }
     
-    // Проверка на большие товары
     const hasLarge = cart.some(item => item.size === 'large');
     const deliveryMethod = hasLarge ? 'Курьер' : 'ПВЗ';
     
-    // Модальное окно для выбора способа оплаты
     const paymentMethod = confirm('Оплатить сразу? Нажмите OK - Сразу, Отмена - При получении');
     const payment = paymentMethod ? 'Сразу' : 'При получении';
     
@@ -130,7 +128,7 @@ function placeOrder() {
     
     db.ref('orders').push(orderData).then(ref => {
         const orderId = ref.key;
-        // Генерируем QR
+        // Генерируем QR с правильным форматом: orderId_clientId_timestamp
         const qrData = `${orderId}_${user.id}_${Date.now()}`;
         currentOrderQR = qrData;
         generateQR(qrData);
@@ -159,7 +157,8 @@ function loadOrders() {
             const statusColors = {
                 'Ожидает': '#f6b83d',
                 'Готов к выдаче': '#1d6f2c',
-                'Выдан': '#7a8a9e'
+                'Выдан': '#7a8a9e',
+                'Доставлен': '#7a8a9e'
             };
             html += `
                 <div class="history-item">
@@ -168,10 +167,12 @@ function loadOrders() {
                         <span style="font-size:0.7rem; color:#7a8a9e; display:block;">${o.date}</span>
                         <span style="font-size:0.7rem; color:#3e5f7e;">${o.items}</span>
                         <span style="font-size:0.7rem; color:#3e5f7e;">🚚 ${o.deliveryMethod} | 💳 ${o.paymentMethod}</span>
+                        <span style="font-size:0.7rem; color:#3e5f7e;">Статус: ${o.status}</span>
                     </div>
                     <div style="text-align:right;">
                         <div><strong>${o.total} ₽</strong></div>
                         <span class="badge" style="background:${statusColors[o.status] || '#7a8a9e'}; color:white;">${o.status}</span>
+                        ${o.status === 'Готов к выдаче' ? '<div style="font-size:0.6rem; color:#1d6f2c;">✅ Готов к выдаче</div>' : ''}
                     </div>
                 </div>
             `;
@@ -180,24 +181,32 @@ function loadOrders() {
     });
 }
 
-// ===== QR-КОД =====
+// ===== QR-КОД (НАСТОЯЩИЙ) =====
 function generateQR(data) {
     const canvas = document.getElementById('qrCanvas');
     if (!canvas) return;
     
     const qrData = data || `${user.id}_${Date.now()}`;
     try {
-        const qr = new QRCode({
-            element: canvas,
-            value: qrData,
-            size: 200,
-            bgColor: '#ffffff',
-            fgColor: '#1a1a2e'
-        });
-        document.getElementById('qrDataDisplay').textContent = `QR: ${qrData}`;
+        // Используем библиотеку QRCode
+        if (typeof QRCode !== 'undefined') {
+            const qr = new QRCode({
+                element: canvas,
+                value: qrData,
+                size: 200,
+                bgColor: '#ffffff',
+                fgColor: '#1a1a2e'
+            });
+            document.getElementById('qrDataDisplay').textContent = `QR: ${qrData}`;
+            document.getElementById('qrDataDisplay').style.color = '#1a1a2e';
+        } else {
+            // Fallback: просто показываем текст
+            document.getElementById('qrDataDisplay').textContent = `QR-код: ${qrData}`;
+            canvas.style.display = 'none';
+        }
     } catch(e) {
         console.error('QR error:', e);
-        document.querySelector('.qr-container').innerHTML = `<p>QR-код: ${qrData}</p>`;
+        document.getElementById('qrDataDisplay').textContent = `QR: ${qrData}`;
     }
 }
 
