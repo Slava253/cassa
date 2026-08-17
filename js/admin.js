@@ -6,68 +6,60 @@ if (!user || user.role !== 'admin') {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    loadStores();
-    loadCashiers();
+    loadSellers();
+    loadEmployees();
     loadCouriers();
     loadSupport();
     loadClients();
-    loadStoreSelects();
     loadPromotions();
 });
 
-// ===== МАГАЗИНЫ =====
-function createStore() {
-    const name = document.getElementById('storeName').value.trim();
-    const address = document.getElementById('storeAddress').value.trim();
+// ===== ПРОДАВЦЫ =====
+function addSeller() {
+    const fullName = document.getElementById('sellerFullName').value.trim();
+    const login = document.getElementById('sellerLogin').value.trim();
+    const password = document.getElementById('sellerPassword').value.trim();
     
-    if (!name) {
-        showToast('❌ Введите название магазина', true);
-        document.getElementById('storeName').focus();
+    if (!fullName || !login || !password) {
+        showToast('❌ Заполните все поля!', true);
         return;
     }
     
-    const data = {
-        name: name,
-        address: address || 'Не указан',
-        createdAt: new Date().toISOString(),
-        cashiers: {},
-        products: {},
-        clients: {}
-    };
-    
-    db.ref('stores').push(data).then(() => {
-        document.getElementById('storeName').value = '';
-        document.getElementById('storeAddress').value = '';
-        showToast(`✅ Магазин "${name}" создан!`);
-        loadStores();
-        loadStoreSelects();
-    }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
-}
-
-function loadStores() {
-    const container = document.getElementById('storesList');
-    container.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
-    
-    db.ref('stores').on('value', snap => {
-        const data = snap.val();
-        if (!data) {
-            container.innerHTML = '<div class="empty-state">Нет магазинов. Создайте первый!</div>';
+    db.ref('sellers').orderByChild('login').equalTo(login).once('value', snap => {
+        if (snap.exists()) {
+            showToast('❌ Логин уже занят!', true);
             return;
         }
+        
+        db.ref('sellers').push({ fullName, login, password, createdAt: new Date().toISOString() })
+        .then(() => {
+            document.getElementById('sellerFullName').value = '';
+            document.getElementById('sellerLogin').value = '';
+            document.getElementById('sellerPassword').value = '';
+            showToast('✅ Продавец добавлен!');
+            loadSellers();
+        });
+    });
+}
+
+function loadSellers() {
+    const container = document.getElementById('sellersList');
+    container.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
+    
+    db.ref('sellers').on('value', snap => {
+        const data = snap.val();
+        if (!data) { container.innerHTML = '<div class="empty-state">Нет продавцов</div>'; return; }
         let html = '';
         for (let key in data) {
             const s = data[key];
-            const cashierCount = s.cashiers ? Object.keys(s.cashiers).length : 0;
-            const productCount = s.products ? Object.keys(s.products).length : 0;
             html += `
                 <div class="member-item">
                     <div>
-                        <strong>🏪 ${s.name}</strong><br>
-                        <span style="font-size:0.8rem; color:#7a8a9e;">📍 ${s.address || 'Адрес не указан'}</span><br>
-                        <span class="badge">👤 Кассиров: ${cashierCount}</span>
-                        <span class="badge">📦 Товаров: ${productCount}</span>
+                        <strong>📦 ${s.fullName}</strong><br>
+                        <span class="badge">🔑 ${s.login}</span>
+                        <span style="font-size:0.7rem;color:#3e5f7e;">🔒 ${s.password}</span>
                     </div>
-                    <button class="small-btn danger" onclick="deleteStore('${key}')">🗑 Удалить</button>
+                    <button class="small-btn danger" onclick="removeUser('sellers','${key}')">🗑</button>
                 </div>
             `;
         }
@@ -75,162 +67,56 @@ function loadStores() {
     });
 }
 
-function deleteStore(id) {
-    if (!confirm('Удалить магазин со всеми данными?')) return;
-    db.ref('stores/' + id).remove().then(() => {
-        showToast('🗑 Магазин удалён');
-        loadStoreSelects();
-        loadStores();
-        loadCashiers();
-        loadCouriers();
-        loadSupport();
-    });
-}
-
-function loadStoreSelects() {
-    const select = document.getElementById('cashierStoreSelect');
-    if (!select) return;
+// ===== СОТРУДНИКИ =====
+function addEmployee() {
+    const fullName = document.getElementById('employeeFullName').value.trim();
+    const login = document.getElementById('employeeLogin').value.trim();
+    const password = document.getElementById('employeePassword').value.trim();
     
-    select.innerHTML = '<option value="">Загрузка...</option>';
-    
-    db.ref('stores').once('value', snap => {
-        const stores = snap.val();
-        select.innerHTML = '<option value="">Выберите магазин</option>';
-        if (stores) {
-            for (let key in stores) {
-                const option = document.createElement('option');
-                option.value = key;
-                option.textContent = stores[key].name;
-                select.appendChild(option);
-            }
-        } else {
-            select.innerHTML = '<option value="">Нет магазинов</option>';
-        }
-    });
-}
-
-// ===== КАССИРЫ =====
-function addCashier() {
-    const storeId = document.getElementById('cashierStoreSelect').value;
-    const fullName = document.getElementById('cashierFullName').value.trim();
-    const login = document.getElementById('cashierLogin').value.trim();
-    const password = document.getElementById('cashierPassword').value.trim();
-    
-    // Проверка заполнения полей
-    if (!storeId) {
-        showToast('❌ Выберите магазин!', true);
-        document.getElementById('cashierStoreSelect').focus();
-        return;
-    }
-    if (!fullName) {
-        showToast('❌ Введите ФИО кассира', true);
-        document.getElementById('cashierFullName').focus();
-        return;
-    }
-    if (!login) {
-        showToast('❌ Введите логин кассира', true);
-        document.getElementById('cashierLogin').focus();
-        return;
-    }
-    if (!password) {
-        showToast('❌ Введите пароль кассира', true);
-        document.getElementById('cashierPassword').focus();
+    if (!fullName || !login || !password) {
+        showToast('❌ Заполните все поля!', true);
         return;
     }
     
-    // Проверяем, существует ли магазин
-    db.ref('stores/' + storeId).once('value', snap => {
-        if (!snap.exists()) {
-            showToast('❌ Магазин не найден!', true);
+    db.ref('employees').orderByChild('login').equalTo(login).once('value', snap => {
+        if (snap.exists()) {
+            showToast('❌ Логин уже занят!', true);
             return;
         }
         
-        // Проверяем уникальность логина в магазине
-        db.ref('stores/' + storeId + '/cashiers').orderByChild('login').equalTo(login).once('value', snap2 => {
-            if (snap2.exists()) {
-                showToast('❌ Кассир с таким логином уже есть в этом магазине!', true);
-                document.getElementById('cashierLogin').focus();
-                return;
-            }
-            
-            const data = { 
-                fullName: fullName, 
-                login: login, 
-                password: password, 
-                createdAt: new Date().toISOString() 
-            };
-            
-            db.ref('stores/' + storeId + '/cashiers').push(data)
-            .then(() => {
-                document.getElementById('cashierFullName').value = '';
-                document.getElementById('cashierLogin').value = '';
-                document.getElementById('cashierPassword').value = '';
-                showToast(`✅ Кассир ${fullName} добавлен! Логин: ${login}`);
-                loadCashiers();
-                loadStores();
-            })
-            .catch(err => {
-                console.error('Ошибка добавления кассира:', err);
-                showToast('❌ Ошибка: ' + err.message, true);
-            });
+        db.ref('employees').push({ fullName, login, password, createdAt: new Date().toISOString() })
+        .then(() => {
+            document.getElementById('employeeFullName').value = '';
+            document.getElementById('employeeLogin').value = '';
+            document.getElementById('employeePassword').value = '';
+            showToast('✅ Сотрудник добавлен!');
+            loadEmployees();
         });
-    }).catch(err => {
-        console.error('Ошибка проверки магазина:', err);
-        showToast('❌ Ошибка: ' + err.message, true);
     });
 }
 
-function loadCashiers() {
-    const container = document.getElementById('cashiersList');
+function loadEmployees() {
+    const container = document.getElementById('employeesList');
     container.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
     
-    db.ref('stores').on('value', snap => {
-        const stores = snap.val();
-        if (!stores) {
-            container.innerHTML = '<div class="empty-state">Нет кассиров</div>';
-            return;
-        }
+    db.ref('employees').on('value', snap => {
+        const data = snap.val();
+        if (!data) { container.innerHTML = '<div class="empty-state">Нет сотрудников</div>'; return; }
         let html = '';
-        let hasCashiers = false;
-        
-        for (let storeKey in stores) {
-            const store = stores[storeKey];
-            const cashiers = store.cashiers || {};
-            const cashierKeys = Object.keys(cashiers);
-            if (cashierKeys.length === 0) continue;
-            
-            hasCashiers = true;
-            html += `<div style="margin-top:12px; padding:12px; background:#f8faff; border-radius:16px;">
-                <strong style="color:#1a1a2e;">🏪 ${store.name}</strong>`;
-            
-            cashierKeys.forEach(key => {
-                const c = cashiers[key];
-                html += `
-                    <div class="member-item" style="margin-top:8px;">
-                        <div class="member-info">
-                            <div>
-                                <strong>${c.fullName}</strong><br>
-                                <span class="badge">🔑 ${c.login}</span>
-                                <span style="font-size:0.7rem;color:#3e5f7e;">🔒 ${c.password}</span>
-                            </div>
-                        </div>
-                        <button class="small-btn danger" onclick="removeCashier('${storeKey}','${key}')">🗑 Удалить</button>
+        for (let key in data) {
+            const e = data[key];
+            html += `
+                <div class="member-item">
+                    <div>
+                        <strong>💳 ${e.fullName}</strong><br>
+                        <span class="badge">🔑 ${e.login}</span>
+                        <span style="font-size:0.7rem;color:#3e5f7e;">🔒 ${e.password}</span>
                     </div>
-                `;
-            });
-            html += `</div>`;
+                    <button class="small-btn danger" onclick="removeUser('employees','${key}')">🗑</button>
+                </div>
+            `;
         }
-        
-        container.innerHTML = hasCashiers ? html : '<div class="empty-state">Нет кассиров</div>';
-    });
-}
-
-function removeCashier(storeId, cashierId) {
-    if (!confirm('Удалить кассира?')) return;
-    db.ref('stores/' + storeId + '/cashiers/' + cashierId).remove().then(() => {
-        showToast('🗑 Кассир удалён');
-        loadCashiers();
-        loadStores();
+        container.innerHTML = html;
     });
 }
 
@@ -240,43 +126,25 @@ function addCourier() {
     const login = document.getElementById('courierLogin').value.trim();
     const password = document.getElementById('courierPassword').value.trim();
     
-    if (!fullName) {
-        showToast('❌ Введите ФИО курьера', true);
-        document.getElementById('courierFullName').focus();
-        return;
-    }
-    if (!login) {
-        showToast('❌ Введите логин курьера', true);
-        document.getElementById('courierLogin').focus();
-        return;
-    }
-    if (!password) {
-        showToast('❌ Введите пароль курьера', true);
-        document.getElementById('courierPassword').focus();
+    if (!fullName || !login || !password) {
+        showToast('❌ Заполните все поля!', true);
         return;
     }
     
     db.ref('couriers').orderByChild('login').equalTo(login).once('value', snap => {
         if (snap.exists()) {
             showToast('❌ Логин уже занят!', true);
-            document.getElementById('courierLogin').focus();
             return;
         }
         
-        const data = {
-            fullName: fullName,
-            login: login,
-            password: password,
-            createdAt: new Date().toISOString()
-        };
-        
-        db.ref('couriers').push(data).then(() => {
+        db.ref('couriers').push({ fullName, login, password, createdAt: new Date().toISOString() })
+        .then(() => {
             document.getElementById('courierFullName').value = '';
             document.getElementById('courierLogin').value = '';
             document.getElementById('courierPassword').value = '';
-            showToast(`✅ Курьер ${fullName} добавлен!`);
+            showToast('✅ Курьер добавлен!');
             loadCouriers();
-        }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+        });
     });
 }
 
@@ -286,35 +154,22 @@ function loadCouriers() {
     
     db.ref('couriers').on('value', snap => {
         const data = snap.val();
-        if (!data) {
-            container.innerHTML = '<div class="empty-state">Нет курьеров</div>';
-            return;
-        }
+        if (!data) { container.innerHTML = '<div class="empty-state">Нет курьеров</div>'; return; }
         let html = '';
         for (let key in data) {
             const c = data[key];
             html += `
                 <div class="member-item">
-                    <div class="member-info">
-                        <div>
-                            <strong>🚚 ${c.fullName}</strong><br>
-                            <span class="badge">🔑 ${c.login}</span>
-                            <span style="font-size:0.7rem;color:#3e5f7e;">🔒 ${c.password}</span>
-                        </div>
+                    <div>
+                        <strong>🚚 ${c.fullName}</strong><br>
+                        <span class="badge">🔑 ${c.login}</span>
+                        <span style="font-size:0.7rem;color:#3e5f7e;">🔒 ${c.password}</span>
                     </div>
-                    <button class="small-btn danger" onclick="removeCourier('${key}')">🗑 Удалить</button>
+                    <button class="small-btn danger" onclick="removeUser('couriers','${key}')">🗑</button>
                 </div>
             `;
         }
         container.innerHTML = html;
-    });
-}
-
-function removeCourier(id) {
-    if (!confirm('Удалить курьера?')) return;
-    db.ref('couriers/' + id).remove().then(() => {
-        showToast('🗑 Курьер удалён');
-        loadCouriers();
     });
 }
 
@@ -324,43 +179,25 @@ function addSupport() {
     const login = document.getElementById('supportLogin').value.trim();
     const password = document.getElementById('supportPassword').value.trim();
     
-    if (!fullName) {
-        showToast('❌ Введите ФИО сотрудника поддержки', true);
-        document.getElementById('supportFullName').focus();
-        return;
-    }
-    if (!login) {
-        showToast('❌ Введите логин поддержки', true);
-        document.getElementById('supportLogin').focus();
-        return;
-    }
-    if (!password) {
-        showToast('❌ Введите пароль поддержки', true);
-        document.getElementById('supportPassword').focus();
+    if (!fullName || !login || !password) {
+        showToast('❌ Заполните все поля!', true);
         return;
     }
     
     db.ref('support').orderByChild('login').equalTo(login).once('value', snap => {
         if (snap.exists()) {
             showToast('❌ Логин уже занят!', true);
-            document.getElementById('supportLogin').focus();
             return;
         }
         
-        const data = {
-            fullName: fullName,
-            login: login,
-            password: password,
-            createdAt: new Date().toISOString()
-        };
-        
-        db.ref('support').push(data).then(() => {
+        db.ref('support').push({ fullName, login, password, createdAt: new Date().toISOString() })
+        .then(() => {
             document.getElementById('supportFullName').value = '';
             document.getElementById('supportLogin').value = '';
             document.getElementById('supportPassword').value = '';
-            showToast(`✅ Сотрудник поддержки ${fullName} добавлен!`);
+            showToast('✅ Сотрудник поддержки добавлен!');
             loadSupport();
-        }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
+        });
     });
 }
 
@@ -370,35 +207,22 @@ function loadSupport() {
     
     db.ref('support').on('value', snap => {
         const data = snap.val();
-        if (!data) {
-            container.innerHTML = '<div class="empty-state">Нет сотрудников поддержки</div>';
-            return;
-        }
+        if (!data) { container.innerHTML = '<div class="empty-state">Нет сотрудников поддержки</div>'; return; }
         let html = '';
         for (let key in data) {
             const s = data[key];
             html += `
                 <div class="member-item">
-                    <div class="member-info">
-                        <div>
-                            <strong>🆘 ${s.fullName}</strong><br>
-                            <span class="badge">🔑 ${s.login}</span>
-                            <span style="font-size:0.7rem;color:#3e5f7e;">🔒 ${s.password}</span>
-                        </div>
+                    <div>
+                        <strong>🆘 ${s.fullName}</strong><br>
+                        <span class="badge">🔑 ${s.login}</span>
+                        <span style="font-size:0.7rem;color:#3e5f7e;">🔒 ${s.password}</span>
                     </div>
-                    <button class="small-btn danger" onclick="removeSupport('${key}')">🗑 Удалить</button>
+                    <button class="small-btn danger" onclick="removeUser('support','${key}')">🗑</button>
                 </div>
             `;
         }
         container.innerHTML = html;
-    });
-}
-
-function removeSupport(id) {
-    if (!confirm('Удалить сотрудника поддержки?')) return;
-    db.ref('support/' + id).remove().then(() => {
-        showToast('🗑 Сотрудник поддержки удалён');
-        loadSupport();
     });
 }
 
@@ -409,26 +233,20 @@ function loadClients() {
     
     db.ref('clients').on('value', snap => {
         const data = snap.val();
-        if (!data) {
-            container.innerHTML = '<div class="empty-state">Нет клиентов</div>';
-            return;
-        }
+        if (!data) { container.innerHTML = '<div class="empty-state">Нет клиентов</div>'; return; }
         let html = '';
         for (let key in data) {
             const c = data[key];
             html += `
                 <div class="member-item">
-                    <div class="member-info">
-                        <div>
-                            <strong>${c.fullName}</strong><br>
-                            <span class="badge">🎫 ${c.cardNumber || key.slice(0,8)}</span><br>
-                            <span style="font-size:0.7rem;">📱 ${c.phone}</span>
-                            <span style="font-size:0.7rem;color:#3e5f7e;">🏪 ${c.storeName || 'Не указан'}</span>
-                        </div>
+                    <div>
+                        <strong>${c.fullName || 'Клиент'}</strong><br>
+                        <span class="badge">🎫 ${c.cardNumber || key.slice(0,8)}</span><br>
+                        <span style="font-size:0.7rem;">📱 ${c.phone}</span>
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                         <span class="badge">⭐ ${c.balance || 0} баллов</span>
-                        <button class="small-btn danger" onclick="removeClient('${key}')">🗑</button>
+                        <button class="small-btn danger" onclick="removeUser('clients','${key}')">🗑</button>
                     </div>
                 </div>
             `;
@@ -437,114 +255,24 @@ function loadClients() {
     });
 }
 
-function removeClient(id) {
-    if (!confirm('Удалить клиента?')) return;
-    db.ref('clients/' + id).remove().then(() => {
-        showToast('🗑 Клиент удалён');
-    });
-}
-
 // ===== АКЦИИ =====
-function createPromotion() {
-    const title = document.getElementById('promotionTitle').value.trim();
-    const startDate = document.getElementById('promotionStart').value;
-    const endDate = document.getElementById('promotionEnd').value;
-    const description = document.getElementById('promotionDescription').value.trim();
-    const prize = document.getElementById('promotionPrize').value.trim();
-    const conditions = document.getElementById('promotionConditions').value.trim();
-    const currency = document.getElementById('promotionCurrency').value;
-    const currencyCount = parseInt(document.getElementById('promotionCurrencyCount').value);
-    const currencyPrice = parseInt(document.getElementById('promotionCurrencyPrice').value);
-    
-    if (!title) {
-        showToast('❌ Введите название акции', true);
-        document.getElementById('promotionTitle').focus();
-        return;
-    }
-    if (!startDate || !endDate) {
-        showToast('❌ Укажите даты начала и окончания', true);
-        return;
-    }
-    if (!description) {
-        showToast('❌ Введите описание акции', true);
-        document.getElementById('promotionDescription').focus();
-        return;
-    }
-    if (isNaN(currencyCount) || currencyCount <= 0) {
-        showToast('❌ Введите количество валюты для накопления', true);
-        document.getElementById('promotionCurrencyCount').focus();
-        return;
-    }
-    if (isNaN(currencyPrice) || currencyPrice <= 0) {
-        showToast('❌ Введите стоимость 1 единицы валюты', true);
-        document.getElementById('promotionCurrencyPrice').focus();
-        return;
-    }
-    
-    const data = {
-        title: title,
-        startDate: startDate,
-        endDate: endDate,
-        description: description,
-        prize: prize || 'Не указан',
-        conditions: conditions || 'Не указаны',
-        currency: currency,
-        currencyCount: currencyCount,
-        currencyPrice: currencyPrice,
-        createdAt: new Date().toISOString(),
-        active: true
-    };
-    
-    db.ref('promotions').push(data).then(() => {
-        document.getElementById('promotionTitle').value = '';
-        document.getElementById('promotionStart').value = '';
-        document.getElementById('promotionEnd').value = '';
-        document.getElementById('promotionDescription').value = '';
-        document.getElementById('promotionPrize').value = '';
-        document.getElementById('promotionConditions').value = '';
-        document.getElementById('promotionCurrency').value = 'Баллы';
-        document.getElementById('promotionCurrencyCount').value = '';
-        document.getElementById('promotionCurrencyPrice').value = '';
-        showToast(`✅ Акция "${title}" создана!`);
-        loadPromotions();
-    }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
-}
-
 function loadPromotions() {
     const container = document.getElementById('promotionsList');
     container.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
     
     db.ref('promotions').on('value', snap => {
         const data = snap.val();
-        if (!data) {
-            container.innerHTML = '<div class="empty-state">Нет акций</div>';
-            return;
-        }
+        if (!data) { container.innerHTML = '<div class="empty-state">Нет акций</div>'; return; }
         let html = '';
         for (let key in data) {
             const p = data[key];
-            const status = p.active ? '✅ Активна' : '❌ Завершена';
-            const currencyIcon = p.currency === 'Наклейки' ? '🏷️' : '⭐';
             html += `
                 <div class="member-item">
                     <div>
-                        <strong>${p.title}</strong><br>
-                        <span style="font-size:0.8rem; color:#7a8a9e;">📅 ${p.startDate} — ${p.endDate}</span><br>
-                        <span style="font-size:0.8rem; color:#3e5f7e;">${p.description}</span><br>
-                        <span class="badge">🎁 ${p.prize}</span>
-                        <span class="badge">📋 ${p.conditions}</span>
-                        <span class="badge" style="background:#1a1a2e; color:white;">
-                            ${currencyIcon} ${p.currency}: ${p.currencyCount} ${p.currency === 'Наклейки' ? 'шт' : 'шт'}
-                        </span>
-                        <span class="badge" style="background:#d4a13e; color:white;">
-                            💰 ${p.currencyPrice} ₽/шт
-                        </span>
-                        <span style="font-size:0.7rem; color:#1d6f2c; margin-left:8px;">${status}</span>
+                        <strong>🎉 ${p.title}</strong><br>
+                        <span style="font-size:0.8rem; color:#7a8a9e;">📅 ${p.startDate} — ${p.endDate}</span>
                     </div>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <button class="small-btn" onclick="togglePromotion('${key}', ${!p.active})">${p.active ? '❌ Завершить' : '✅ Активировать'}</button>
-                        <button class="small-btn danger" onclick="deletePromotion('${key}')">🗑</button>
-                    </div>
+                    <button class="small-btn danger" onclick="removeUser('promotions','${key}')">🗑</button>
                 </div>
             `;
         }
@@ -552,16 +280,18 @@ function loadPromotions() {
     });
 }
 
-function togglePromotion(id, active) {
-    db.ref('promotions/' + id).update({ active: active }).then(() => {
-        showToast(active ? '✅ Акция активирована' : '❌ Акция завершена');
-    });
-}
-
-function deletePromotion(id) {
-    if (!confirm('Удалить акцию?')) return;
-    db.ref('promotions/' + id).remove().then(() => {
-        showToast('🗑 Акция удалена');
+// ===== УДАЛЕНИЕ =====
+function removeUser(path, id) {
+    if (!confirm('Удалить?')) return;
+    db.ref(path + '/' + id).remove().then(() => {
+        showToast('🗑 Удалено');
+        // Перезагружаем все списки
+        loadSellers();
+        loadEmployees();
+        loadCouriers();
+        loadSupport();
+        loadClients();
+        loadPromotions();
     });
 }
 
