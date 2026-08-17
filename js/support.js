@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadSupportMessages() {
-    const container = document.getElementById('supportMessagesList');
+    const container = document.getElementById('supportMessages');
     container.innerHTML = '<div class="loading-spinner">Загрузка...</div>';
     
     db.ref('support_messages').orderByChild('status').equalTo('Новое').on('value', snap => {
@@ -27,12 +27,12 @@ function loadSupportMessages() {
                 <div class="member-item">
                     <div>
                         <strong>👤 ${m.clientName || 'Клиент'}</strong>
-                        <span style="font-size:0.7rem; color:#7a8a9e; display:block;">📱 ${m.clientPhone || 'Не указан'}</span>
+                        <span style="font-size:0.7rem; color:#7a8a9e; display:block;">📱 ${m.clientPhone || ''}</span>
                         <span style="font-size:0.8rem; display:block;">💬 ${m.message}</span>
                         <span style="font-size:0.7rem; color:#7a8a9e;">📅 ${m.date}</span>
                         <span class="badge" style="background:#f6b83d;">${m.status}</span>
                     </div>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
                         <input type="text" id="response_${key}" placeholder="Введите ответ..." style="flex:2; min-width:150px;">
                         <button onclick="sendResponse('${key}')" class="btn-success">📨 Ответить</button>
                         <button onclick="closeSupport('${key}')" class="btn-warning">✅ Закрыть</button>
@@ -57,23 +57,9 @@ function sendResponse(id) {
         responseDate: new Date().toLocaleString('ru-RU'),
         supportName: user.fullName
     }).then(() => {
-        showToast('✅ Ответ отправлен клиенту');
+        showToast('✅ Ответ отправлен');
         document.getElementById('response_' + id).value = '';
-        // Перезагружаем список
         loadSupportMessages();
-        // Обновляем сообщения у клиента
-        updateClientSupportMessages(id, response);
-    }).catch(err => showToast('❌ Ошибка: ' + err.message, true));
-}
-
-function updateClientSupportMessages(id, response) {
-    // Получаем данные сообщения
-    db.ref('support_messages/' + id).once('value', snap => {
-        const data = snap.val();
-        if (data && data.clientId) {
-            // Обновляем в клиентских сообщениях (если клиент онлайн)
-            // Это будет отображаться при следующей загрузке
-        }
     });
 }
 
