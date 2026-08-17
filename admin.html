@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="img/icon-192.png">
-    <title>У дома | Админ</title>
+    <title>Marka | Админ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/mobile.css">
@@ -16,7 +16,7 @@
     <div class="app-container">
         <div class="header">
             <div class="logo-area">
-                <h1>🏪 У дома</h1>
+                <h1>👑 Marka</h1>
                 <p>Панель администратора</p>
             </div>
             <div class="user-status">
@@ -26,62 +26,56 @@
         </div>
 
         <div class="main-content">
-            <!-- Создать магазин -->
+            <!-- Добавить продавца -->
             <div class="card" style="border: 2px solid #f6b83d;">
-                <div class="card-title">🏪 Создать магазин</div>
-                <div class="form-group">
-                    <label>Название магазина</label>
-                    <input type="text" id="storeName" placeholder="Магазин 'У дома'">
-                </div>
-                <div class="form-group">
-                    <label>Адрес</label>
-                    <input type="text" id="storeAddress" placeholder="ул. Ленина, 15">
-                </div>
-                <button onclick="createStore()" class="btn-success" style="width:100%;">🏪 Создать магазин</button>
-            </div>
-
-            <!-- Список магазинов -->
-            <div class="card">
-                <div class="card-title">📋 Список магазинов</div>
-                <div id="storesList"><div class="loading-spinner">Загрузка...</div></div>
-            </div>
-
-            <!-- Добавить кассира -->
-            <div class="card">
-                <div class="card-title">➕ Добавить кассира</div>
-                <div class="form-group">
-                    <label>🏪 Выберите магазин</label>
-                    <select id="cashierStoreSelect"><option value="">Выберите магазин</option></select>
-                </div>
+                <div class="card-title">📦 Добавить продавца</div>
                 <div class="grid-2col">
                     <div>
                         <div class="form-group">
-                            <label>👤 ФИО кассира</label>
-                            <input type="text" id="cashierFullName" placeholder="Иванов Иван Иванович">
+                            <label>👤 ФИО продавца</label>
+                            <input type="text" id="sellerFullName" placeholder="Иванов Иван Иванович">
                         </div>
                         <div class="form-group">
-                            <label>🔑 Логин кассира</label>
-                            <input type="text" id="cashierLogin" placeholder="ivanov" style="font-size:1rem;">
+                            <label>🔑 Логин</label>
+                            <input type="text" id="sellerLogin" placeholder="seller123">
                         </div>
                     </div>
                     <div>
                         <div class="form-group">
-                            <label>🔒 Пароль кассира</label>
-                            <input type="text" id="cashierPassword" placeholder="123456" style="font-size:1rem;">
+                            <label>🔒 Пароль</label>
+                            <input type="text" id="sellerPassword" placeholder="123456">
                         </div>
                     </div>
                 </div>
-                <button onclick="addCashier()" class="btn-login">✅ Добавить кассира</button>
+                <button onclick="addSeller()" class="btn-success" style="width:100%;">📦 Добавить продавца</button>
             </div>
 
-            <!-- Список кассиров -->
-            <div class="card">
-                <div class="card-title">📋 Кассиры по магазинам</div>
-                <div id="cashiersList"><div class="loading-spinner">Загрузка...</div></div>
+            <!-- Добавить сотрудника -->
+            <div class="card" style="border: 2px solid #1d6f2c;">
+                <div class="card-title">💳 Добавить сотрудника</div>
+                <div class="grid-2col">
+                    <div>
+                        <div class="form-group">
+                            <label>👤 ФИО сотрудника</label>
+                            <input type="text" id="employeeFullName" placeholder="Петров Петр Петрович">
+                        </div>
+                        <div class="form-group">
+                            <label>🔑 Логин</label>
+                            <input type="text" id="employeeLogin" placeholder="employee123">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>🔒 Пароль</label>
+                            <input type="text" id="employeePassword" placeholder="123456">
+                        </div>
+                    </div>
+                </div>
+                <button onclick="addEmployee()" class="btn-success" style="width:100%;">💳 Добавить сотрудника</button>
             </div>
 
             <!-- Добавить курьера -->
-            <div class="card" style="border: 2px solid #1d6f2c;">
+            <div class="card" style="border: 2px solid #d4a13e;">
                 <div class="card-title">🚚 Добавить курьера</div>
                 <div class="grid-2col">
                     <div>
@@ -90,29 +84,23 @@
                             <input type="text" id="courierFullName" placeholder="Сидоров Сидор Сидорович">
                         </div>
                         <div class="form-group">
-                            <label>🔑 Логин курьера</label>
+                            <label>🔑 Логин</label>
                             <input type="text" id="courierLogin" placeholder="courier123">
                         </div>
                     </div>
                     <div>
                         <div class="form-group">
-                            <label>🔒 Пароль курьера</label>
+                            <label>🔒 Пароль</label>
                             <input type="text" id="courierPassword" placeholder="123456">
                         </div>
                     </div>
                 </div>
-                <button onclick="addCourier()" class="btn-success" style="width:100%;">🚚 Добавить курьера</button>
+                <button onclick="addCourier()" class="btn-warning" style="width:100%;">🚚 Добавить курьера</button>
             </div>
 
-            <!-- Список курьеров -->
-            <div class="card">
-                <div class="card-title">📋 Список курьеров</div>
-                <div id="couriersList"><div class="loading-spinner">Загрузка...</div></div>
-            </div>
-
-            <!-- Добавить сотрудника поддержки -->
-            <div class="card" style="border: 2px solid #d4a13e;">
-                <div class="card-title">🆘 Добавить сотрудника поддержки</div>
+            <!-- Добавить поддержку -->
+            <div class="card" style="border: 2px solid #7a8a9e;">
+                <div class="card-title">🆘 Добавить поддержку</div>
                 <div class="grid-2col">
                     <div>
                         <div class="form-group">
@@ -120,91 +108,50 @@
                             <input type="text" id="supportFullName" placeholder="Петрова Анна Сергеевна">
                         </div>
                         <div class="form-group">
-                            <label>🔑 Логин поддержки</label>
+                            <label>🔑 Логин</label>
                             <input type="text" id="supportLogin" placeholder="support123">
                         </div>
                     </div>
                     <div>
                         <div class="form-group">
-                            <label>🔒 Пароль поддержки</label>
+                            <label>🔒 Пароль</label>
                             <input type="text" id="supportPassword" placeholder="123456">
                         </div>
                     </div>
                 </div>
-                <button onclick="addSupport()" class="btn-warning" style="width:100%;">🆘 Добавить сотрудника поддержки</button>
+                <button onclick="addSupport()" class="btn-info" style="width:100%;">🆘 Добавить поддержку</button>
             </div>
 
-            <!-- Список поддержки -->
+            <!-- Списки -->
             <div class="card">
-                <div class="card-title">📋 Сотрудники поддержки</div>
+                <div class="card-title">📋 Список продавцов</div>
+                <div id="sellersList"><div class="loading-spinner">Загрузка...</div></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📋 Список сотрудников</div>
+                <div id="employeesList"><div class="loading-spinner">Загрузка...</div></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📋 Список курьеров</div>
+                <div id="couriersList"><div class="loading-spinner">Загрузка...</div></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📋 Список поддержки</div>
                 <div id="supportList"><div class="loading-spinner">Загрузка...</div></div>
             </div>
 
-            <!-- Создать акцию -->
-            <div class="card" style="border: 2px solid #f6b83d;">
-                <div class="card-title">🎉 Создать акцию</div>
-                <div class="grid-2col">
-                    <div>
-                        <div class="form-group">
-                            <label>Название акции</label>
-                            <input type="text" id="promotionTitle" placeholder="Скидка на молоко 20%">
-                        </div>
-                        <div class="form-group">
-                            <label>📅 Дата начала</label>
-                            <input type="date" id="promotionStart">
-                        </div>
-                        <div class="form-group">
-                            <label>📅 Дата окончания</label>
-                            <input type="date" id="promotionEnd">
-                        </div>
-                    </div>
-                    <div>
-                        <div class="form-group">
-                            <label>📝 Описание акции</label>
-                            <textarea id="promotionDescription" rows="2" placeholder="Подробное описание акции..."></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>🎁 Призы</label>
-                            <input type="text" id="promotionPrize" placeholder="Скидка, подарок и т.д.">
-                        </div>
-                        <div class="form-group">
-                            <label>📋 Условия акции</label>
-                            <input type="text" id="promotionConditions" placeholder="Условия участия...">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="grid-2col" style="margin-top:12px; padding-top:12px; border-top:2px solid #eef2f8;">
-                    <div class="form-group">
-                        <label>💰 Валюта накопления</label>
-                        <select id="promotionCurrency">
-                            <option value="Баллы">⭐ Баллы</option>
-                            <option value="Наклейки">🏷️ Наклейки</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>📊 Количество валюты для накопления</label>
-                        <input type="number" id="promotionCurrencyCount" placeholder="70" min="1" step="1">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>💰 Стоимость 1 единицы валюты (₽)</label>
-                    <input type="number" id="promotionCurrencyPrice" placeholder="400" min="1" step="1">
-                </div>
-                
-                <button onclick="createPromotion()" class="btn-success" style="width:100%; margin-top:12px;">🎉 Создать акцию</button>
-            </div>
-
-            <!-- Список акций -->
-            <div class="card">
-                <div class="card-title">📋 Акции</div>
-                <div id="promotionsList"><div class="loading-spinner">Загрузка...</div></div>
-            </div>
-
-            <!-- Список клиентов -->
             <div class="card">
                 <div class="card-title">📋 Клиенты</div>
                 <div id="clientsList"><div class="loading-spinner">Загрузка...</div></div>
+            </div>
+
+            <!-- Акции -->
+            <div class="card" style="border: 2px solid #ffd700;">
+                <div class="card-title">🎉 Акции</div>
+                <div id="promotionsList"><div class="loading-spinner">Загрузка...</div></div>
             </div>
         </div>
     </div>
